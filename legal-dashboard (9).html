@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מערכת ניהול תיקים משפטיים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F7FA;
+  --panel:#FFFFFF;
+  --ink:#111A2B;
+  --ink-soft:#5A6478;
+  --ink-faint:#8A93A6;
+  --line:#E4E9F0;
+  --line-soft:#EEF2F6;
+  --accent:#2455D9;
+  --accent-soft:#EAF0FE;
+  --accent-glow:rgba(36,85,217,0.16);
+  --gold:#A9803D;
+  --gold-soft:#F8F1E3;
+  --green:#157A4A;
+  --green-soft:#E6F5EC;
+  --orange:#B7660A;
+  --orange-soft:#FBEFDD;
+  --blue:#1C5FC2;
+  --blue-soft:#E9F1FD;
+  --gray:#6B7385;
+  --gray-soft:#EEF1F5;
+  --radius-lg:18px;
+  --radius-md:12px;
+  --radius-sm:8px;
+  --shadow-sm:0 1px 2px rgba(17,26,43,0.04);
+  --shadow-md:0 10px 30px -14px rgba(17,26,43,0.18);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Heebo',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.serif{font-family:'Heebo',sans-serif;}
+button{font-family:inherit;cursor:pointer;}
+select,input{font-family:inherit;}
+
+/* ---- layout shell ---- */
+.shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:250px;
+  flex-shrink:0;
+  background:linear-gradient(180deg,#0E1830 0%, #101C38 100%);
+  color:#EDEFF5;
+  display:flex;
+  flex-direction:column;
+  padding:28px 20px;
+  position:relative;
+  overflow:hidden;
+}
+.sidebar::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(140px 140px at 90% 0%, rgba(90,140,255,0.22), transparent 60%),
+    radial-gradient(160px 160px at 0% 100%, rgba(169,128,61,0.14), transparent 60%);
+  pointer-events:none;
+}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:6px;position:relative;z-index:1;}
+.brand-icon{
+  width:42px;height:42px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:12px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.14);
+}
+.brand-icon svg{width:22px;height:22px;}
+.brand-text h1{font-size:16.5px;font-weight:500;margin:0;line-height:1.3;color:#F3F5FA;}
+.brand-text p{font-size:11.5px;color:#93A0C0;margin:2px 0 0;letter-spacing:0.02em;}
+.brand-line{
+  height:1px;margin:20px 0 22px;
+  background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(120,160,255,0.55) 50%, rgba(255,255,255,0) 100%);
+  position:relative;z-index:1;
+}
+.nav{display:flex;flex-direction:column;gap:4px;position:relative;z-index:1;}
+.nav-item{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 12px;
+  border-radius:10px;
+  border:none;background:transparent;
+  color:#B7BFD6;
+  font-size:14px;font-weight:400;
+  text-align:right;
+  transition:background .15s, color .15s;
+}
+.nav-item svg{width:17px;height:17px;flex-shrink:0;opacity:0.85;}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:#EDEFF5;}
+.nav-item.active{
+  background:rgba(90,140,255,0.14);
+  color:#EAF0FF;
+  box-shadow:inset 0 0 0 1px rgba(120,160,255,0.35);
+}
+.nav-item.active svg{opacity:1;}
+.sidebar-footer{margin-top:auto;padding-top:18px;position:relative;z-index:1;}
+.report-btn{
+  width:100%;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 12px;
+  border-radius:10px;
+  border:1px solid rgba(169,128,61,0.55);
+  background:rgba(169,128,61,0.1);
+  color:#E8D3A6;
+  font-size:13px;font-weight:500;
+}
+.report-btn:hover{background:rgba(169,128,61,0.2);}
+.report-btn svg{width:15px;height:15px;}
+
+main{flex:1;padding:32px 40px 60px;max-width:1400px;}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:14px;}
+.page-header h2{font-size:24px;font-weight:500;margin:0 0 4px;}
+.page-header .sub{font-size:13px;color:var(--ink-soft);margin:0;}
+.header-actions{display:flex;gap:10px;}
+
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 15px;
+  border-radius:9px;
+  border:1px solid var(--line);
+  background:var(--panel);
+  color:var(--ink);
+  font-size:13px;font-weight:500;
+  box-shadow:var(--shadow-sm);
+  transition:border-color .15s, background .15s;
+}
+.btn svg{width:15px;height:15px;}
+.btn:hover{border-color:#C7CFDD;background:#FAFBFD;}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn-primary:hover{background:#1D48C4;border-color:#1D48C4;}
+.btn-ghost{background:transparent;box-shadow:none;}
+
+/* ---- dashboard cards ---- */
+.section-block{margin-bottom:34px;}
+.section-block h3{font-size:14px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin:0 0 12px;}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;}
+.stat-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  padding:18px 20px;
+  box-shadow:var(--shadow-sm);
+  position:relative;
+  overflow:hidden;
+}
+.stat-card::after{
+  content:"";position:absolute;left:-30%;top:-60%;width:140px;height:140px;
+  background:radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  pointer-events:none;
+}
+.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.stat-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.stat-icon svg{width:17px;height:17px;}
+.stat-num{font-family:'Heebo',sans-serif;font-size:32px;font-weight:700;margin:0;line-height:1;}
+.stat-label{font-size:12.5px;color:var(--ink-soft);margin:6px 0 0;}
+
+/* ---- tables ---- */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-sm);
+  margin-bottom:26px;
+  overflow:hidden;
+}
+.panel-head{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  padding:16px 20px;
+  border-bottom:1px solid var(--line-soft);
+}
+.panel-title{display:flex;align-items:center;gap:10px;}
+.panel-title h3{font-size:15px;font-weight:500;margin:0;}
+.count-pill{
+  font-size:11.5px;font-weight:500;color:var(--ink-soft);
+  background:var(--gray-soft);
+  padding:2px 9px;border-radius:20px;
+}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.filters select{
+  padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:#FCFDFE;
+  font-size:12.5px;color:var(--ink-soft);min-width:130px;
+}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  text-align:right;
+  font-size:11.5px;font-weight:600;color:var(--ink-faint);
+  text-transform:uppercase;letter-spacing:.03em;
+  padding:10px 18px;
+  border-bottom:1px solid var(--line-soft);
+  white-space:nowrap;
+}
+tbody td{
+  padding:11px 18px;
+  font-size:13.5px;
+  border-bottom:1px solid var(--line-soft);
+  color:var(--ink);
+  vertical-align:middle;
+}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#FAFBFE;}
+.cell-select{
+  padding:5px 8px;border-radius:7px;border:1px solid var(--line);
+  font-size:12.5px;background:#fff;color:var(--ink);
+}
+.notes-input{
+  width:100%;min-width:140px;
+  padding:5px 8px;border-radius:7px;border:1px solid var(--line);
+  font-size:12.5px;background:#fff;color:var(--ink);
+}
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11.5px;font-weight:500;
+  padding:4px 10px;border-radius:20px;
+}
+.pill.green{background:var(--green-soft);color:var(--green);}
+.pill.orange{background:var(--orange-soft);color:var(--orange);}
+.pill.blue{background:var(--blue-soft);color:var(--blue);}
+.pill.gray{background:var(--gray-soft);color:var(--gray);}
+.row-actions{display:flex;gap:6px;}
+.icon-btn{
+  width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:#fff;
+  display:flex;align-items:center;justify-content:center;color:var(--ink-soft);
+}
+.icon-btn svg{width:14px;height:14px;}
+.icon-btn:hover{border-color:#C7CFDD;color:var(--ink);}
+.icon-btn.danger:hover{border-color:#E9B4B4;color:#B4302E;background:#FDF2F2;}
+.empty-row td{text-align:center;color:var(--ink-faint);padding:26px;font-size:13px;}
+.sub-panel .panel-head{background:#FAFBFD;}
+
+/* ---- modal ---- */
+.overlay{
+  position:fixed;inset:0;background:rgba(14,20,35,0.45);
+  display:none;align-items:center;justify-content:center;z-index:100;padding:20px;
+}
+.overlay.open{display:flex;}
+.modal{
+  background:#fff;border-radius:16px;padding:26px 26px 22px;width:100%;max-width:440px;
+  box-shadow:var(--shadow-md);
+  max-height:88vh;overflow-y:auto;
+}
+.modal h3{font-size:17px;font-weight:500;margin:0 0 18px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;}
+.field input,.field select{
+  width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);
+  font-size:13.5px;background:#FCFDFE;color:var(--ink);
+}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+
+/* ---- print ---- */
+#printArea{display:none;}
+body.print-mode .shell{display:none;}
+body.print-mode #printArea{display:block;padding:24px;}
+.print-doc h1{font-family:'Heebo',sans-serif;font-size:20px;margin:0 0 2px;}
+.print-doc .print-sub{font-size:12px;color:#555;margin:0 0 18px;}
+.print-doc h2{font-size:15px;font-weight:600;margin:22px 0 8px;border-bottom:1.5px solid #222;padding-bottom:4px;}
+.print-doc h3{font-size:13px;font-weight:600;margin:14px 0 6px;color:#333;}
+.print-doc table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+.print-doc th,.print-doc td{border:1px solid #ccc;padding:5px 8px;font-size:11.5px;text-align:right;}
+.print-doc th{background:#f2f2f2;}
+@media print{
+  @page{margin:14mm;}
+  body.print-mode .shell{display:none;}
+}
+
+.toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;
+  opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;z-index:200;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media (max-width:900px){
+  .sidebar{width:76px;padding:20px 12px;}
+  .brand-text,.nav-item span,.report-btn span{display:none;}
+  .nav-item{justify-content:center;}
+  main{padding:22px 16px 50px;}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#DCE3F5" stroke-width="1.6"><path d="M12 3v18M5 8l-3 5a3 3 0 0 0 6 0l-3-5Zm14 0l-3 5a3 3 0 0 0 6 0l-3-5ZM4 8h5M15 8h5M7 21h10"/></svg>
+      </div>
+      <div class="brand-text">
+        <h1>דשבורד</h1>
+        <p>מערכת ניהול תיקים</p>
+      </div>
+    </div>
+    <div class="brand-line"></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-footer">
+      <button class="report-btn" id="combinedReportBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5M9 13h6M9 17h6M9 9h2"/></svg>
+        <span>הפקת דוח מרוכז</span>
+      </button>
+    </div>
+  </aside>
+
+  <main id="main"></main>
+</div>
+
+<div id="printArea"></div>
+<div class="overlay" id="overlay"><div class="modal" id="modalBody"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- data model ---------------- */
+const RESPONSIBLE = ['מיכל','שחר','גבריאלה','מיראל','יפעת'];
+const CASE_TYPES = ['הוצאה לפועל','בית משפט'];
+
+const CLAIM_STATUSES = ['מחכה למסירה','בהמתנה','ניתן להכין','בטיפול','מחכה לחלוף המועד','בבדיקה אצל מיכל','בבדיקה אצל שחר','בבדיקה אצל יפעת','בבדיקה אצל מיראל','בבדיקה אצל גבריאלה','הוגש'];
+const GARNISH_STATUSES = ['בטיפול','בבדיקה','בבדיקה אצל שחר','בבדיקה אצל מיכל','בבדיקה אצל יפעת','בבדיקה אצל מיראל','בבדיקה אצל גבריאלה','הוגש'];
+const CLOSURE_STATUSES = ['בטיפול','מחכה לדיבידנד','בבדיקה אצל מיכל','בבדיקה אצל שחר','בבדיקה אצל יפעת','בבדיקה אצל מיראל','בבדיקה אצל גבריאלה','מחכה לשכר טרחה','הוגש לאבי','הושלם'];
+const TASK_STATUSES = ['בבדיקה אצל מיכל','בבדיקה אצל שחר','בבדיקה אצל יפעת','בבדיקה אצל מיראל','בבדיקה אצל גבריאלה','בטיפול','הושלם'];
+
+const ICONS = {
+  home:'<path d="M4 11 12 4l8 7"/><path d="M6 10v9h5v-6h2v6h5v-9"/>',
+  claims:'<path d="M8 3h8l4 4v14H4V3z"/><path d="M16 3v4h4M8 12h8M8 16h5"/>',
+  garnish:'<path d="M12 3v18M6 7l-3 5a3 3 0 0 0 6 0l-3-5Zm12 0l-3 5a3 3 0 0 0 6 0l-3-5ZM4 7h6M14 7h6M9 21h6"/>',
+  closure:'<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/>',
+  tasks:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12l2.5 2.5L16 9"/>',
+  print:'<path d="M6 9V3h12v6M6 18h12v4H6zM4 9h16v7H4z"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  edit:'<path d="M4 20h4l10-10-4-4L4 16v4z"/>'
+};
+function icon(name,extra){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" ${extra||''}>${ICONS[name]}</svg>`;}
+
+const SECTIONS = {
+  claims:{
+    key:'claims', title:'תביעות', singular:'תביעה', icon:'claims',
+    statuses:CLAIM_STATUSES,
+    isFinished:s=>s==='הוגש',
+    finishedLabel:'תביעות שהוגשו',
+    hasResponsibleField:true,
+    fields:[
+      {key:'caseNumber',label:'מספר תיק',type:'text'},
+      {key:'caseName',label:'שם תיק',type:'text'},
+      {key:'responsible',label:'אחראי',type:'select',options:RESPONSIBLE},
+      {key:'caseType',label:'סוג תיק',type:'select',options:CASE_TYPES},
+      {key:'prepDate',label:'תאריך הכנה',type:'date'},
+      {key:'status',label:'סטטוס עבודה',type:'select',options:CLAIM_STATUSES},
+      {key:'notes',label:'הערות',type:'text'}
+    ],
+    columns:[
+      {key:'caseNumber',label:'מספר תיק'},
+      {key:'caseName',label:'שם תיק'},
+      {key:'responsible',label:'אחראי'},
+      {key:'caseType',label:'סוג תיק'},
+      {key:'prepDate',label:'תאריך הכנה'},
+      {key:'status',label:'סטטוס עבודה'},
+      {key:'notes',label:'הערות'}
+    ]
+  },
+  garnishments:{
+    key:'garnishments', title:'עיקולים', singular:'עיקול', icon:'garnish',
+    statuses:GARNISH_STATUSES,
+    isFinished:s=>s==='הוגש',
+    finishedLabel:'עיקולים שהוגשו',
+    hasResponsibleField:false,
+    fields:[
+      {key:'caseNumber',label:'מספר תיק',type:'text'},
+      {key:'caseName',label:'שם תיק',type:'text'},
+      {key:'status',label:'סטטוס',type:'select',options:GARNISH_STATUSES}
+    ],
+    columns:[
+      {key:'caseNumber',label:'מספר תיק'},
+      {key:'caseName',label:'שם תיק'},
+      {key:'status',label:'סטטוס'}
+    ]
+  },
+  closures:{
+    key:'closures', title:'סגירות חשבון', singular:'סגירת חשבון', icon:'closure',
+    statuses:CLOSURE_STATUSES,
+    isFinished:s=>s==='הושלם',
+    finishedLabel:'סגירות חשבון שהושלמו',
+    hasResponsibleField:false,
+    fields:[
+      {key:'caseNumber',label:'מספר תיק',type:'text'},
+      {key:'caseName',label:'שם תיק',type:'text'},
+      {key:'status',label:'סטטוס',type:'select',options:CLOSURE_STATUSES}
+    ],
+    columns:[
+      {key:'caseNumber',label:'מספר תיק'},
+      {key:'caseName',label:'שם תיק'},
+      {key:'status',label:'סטטוס'}
+    ]
+  },
+  tasks:{
+    key:'tasks', title:'משימות כלליות', singular:'משימה', icon:'tasks',
+    statuses:TASK_STATUSES,
+    isFinished:s=>s==='הושלם',
+    finishedLabel:'משימות שהושלמו',
+    hasResponsibleField:false,
+    fields:[
+      {key:'caseNumber',label:'מספר תיק',type:'text'},
+      {key:'caseName',label:'שם תיק',type:'text'},
+      {key:'taskDesc',label:'תיאור המשימה',type:'text'},
+      {key:'status',label:'סטטוס',type:'select',options:TASK_STATUSES}
+    ],
+    columns:[
+      {key:'caseNumber',label:'מספר תיק'},
+      {key:'caseName',label:'שם תיק'},
+      {key:'taskDesc',label:'תיאור המשימה'},
+      {key:'status',label:'סטטוס'}
+    ]
+  }
+};
+
+const PAGES = [
+  {key:'dashboard',label:'בית',icon:'home'},
+  {key:'claims',label:'תביעות',icon:'claims'},
+  {key:'garnishments',label:'עיקולים',icon:'garnish'},
+  {key:'closures',label:'סגירות חשבון',icon:'closure'},
+  {key:'tasks',label:'משימות כלליות',icon:'tasks'}
+];
+
+let state = {
+  currentPage:'dashboard',
+  filters:{claims:{status:'all',responsible:'all'},garnishments:{status:'all',responsible:'all'},closures:{status:'all',responsible:'all'},tasks:{status:'all',responsible:'all'}},
+  data:{ claims:[], garnishments:[], closures:[], tasks:[] }
+};
+
+function seedData(){
+  return {
+    claims:[
+      {id:uid(),caseNumber:'11234-05-24',caseName:'בנק לאומי נ׳ כהן',responsible:'מיכל',caseType:'הוצאה לפועל',prepDate:'2026-06-02',status:'בטיפול',notes:'ממתין לאישור לקוח'},
+      {id:uid(),caseNumber:'22987-01-25',caseName:'חברת אשראי ישיר נ׳ לוי',responsible:'שחר',caseType:'בית משפט',prepDate:'2026-07-14',status:'בבדיקה אצל גבריאלה',notes:''},
+      {id:uid(),caseNumber:'30045-03-25',caseName:'כרטיסי אשראי נ׳ פרץ',responsible:'יפעת',caseType:'הוצאה לפועל',prepDate:'2026-05-20',status:'מחכה למסירה',notes:'למסירה ידנית'},
+      {id:uid(),caseNumber:'18820-11-24',caseName:'מימון ישיר נ׳ אברהם',responsible:'מיראל',caseType:'בית משפט',prepDate:'2026-04-11',status:'הוגש',notes:'הוגש לבית המשפט'}
+    ],
+    garnishments:[
+      {id:uid(),caseNumber:'G-4471',caseName:'עיקול חשבון בנק - כהן',status:'בבדיקה אצל מיכל'},
+      {id:uid(),caseNumber:'G-4502',caseName:'עיקול משכורת - לוי',status:'בטיפול'},
+      {id:uid(),caseNumber:'G-4390',caseName:'עיקול רכב - פרץ',status:'הוגש'}
+    ],
+    closures:[
+      {id:uid(),caseNumber:'C-1187',caseName:'סגירת תיק - אברהם',status:'מחכה לדיבידנד'},
+      {id:uid(),caseNumber:'C-1204',caseName:'סגירת תיק - גולן',status:'בבדיקה אצל שחר'},
+      {id:uid(),caseNumber:'C-1150',caseName:'סגירת תיק - נחום',status:'הושלם'}
+    ],
+    tasks:[
+      {id:uid(),caseNumber:'T-901',caseName:'תיק כהן',taskDesc:'הכנת תצהיר עדכני',status:'בבדיקה אצל מיראל'},
+      {id:uid(),caseNumber:'T-914',caseName:'תיק לוי',taskDesc:'עדכון פרטי התקשרות',status:'בטיפול'},
+      {id:uid(),caseNumber:'T-880',caseName:'תיק פרץ',taskDesc:'שליחת מכתב התראה',status:'הושלם'}
+    ]
+  };
+}
+
+function uid(){return 'id-'+Math.random().toString(36).slice(2,10);}
+
+/* ---------------- persistence ---------------- */
+async function loadState(){
+  try{
+    const res = await window.storage.get('legal-dashboard-data', true);
+    if(res && res.value){
+      state.data = JSON.parse(res.value);
+    } else {
+      state.data = seedData();
+      await saveState();
+    }
+  }catch(e){
+    state.data = seedData();
+  }
+  render();
+}
+let saveTimer=null;
+function saveState(){
+  return new Promise((resolve)=>{
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(async ()=>{
+      try{ await window.storage.set('legal-dashboard-data', JSON.stringify(state.data), true); }
+      catch(e){ showToast('שגיאה בשמירת הנתונים'); }
+      resolve();
+    },150);
+  });
+}
+
+/* ---------------- status color helper ---------------- */
+function statusColor(status){
+  if(status==='הוגש'||status==='הוגש לאבי'||status==='הושלם') return 'green';
+  if(status==='בטיפול') return 'orange';
+  if(status.indexOf('בדיקה')>-1) return 'blue';
+  return 'gray';
+}
+function extractReviewer(status){
+  const m = status.match(/אצל (.+)$/);
+  return m?m[1]:null;
+}
+
+/* ---------------- render: nav ---------------- */
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = PAGES.map(p=>`
+    <button class="nav-item ${state.currentPage===p.key?'active':''}" data-page="${p.key}">
+      ${icon(p.icon)}<span>${p.label}</span>
+    </button>`).join('');
+  nav.querySelectorAll('.nav-item').forEach(btn=>{
+    btn.addEventListener('click',()=>{ state.currentPage=btn.dataset.page; render(); });
+  });
+}
+
+/* ---------------- render: dashboard ---------------- */
+function countWhere(list,pred){return list.filter(pred).length;}
+
+function renderDashboard(){
+  const c = state.data.claims, g = state.data.garnishments, cl = state.data.closures, t = state.data.tasks;
+  const claimsCards = [
+    {label:'תביעות בבדיקה', num:countWhere(c,r=>r.status.indexOf('בדיקה')>-1), color:'blue', icon:'claims'},
+    {label:'ממתינות למסירה', num:countWhere(c,r=>r.status==='מחכה למסירה'), color:'gray', icon:'claims'},
+    {label:'תביעות בטיפול', num:countWhere(c,r=>r.status==='בטיפול'), color:'orange', icon:'claims'}
+  ];
+  const garnishCards = [
+    {label:'עיקולים בבדיקה', num:countWhere(g,r=>r.status.indexOf('בדיקה')>-1), color:'blue', icon:'garnish'},
+    {label:'עיקולים בטיפול', num:countWhere(g,r=>r.status==='בטיפול'), color:'orange', icon:'garnish'},
+    {label:'עיקולים שהוגשו', num:countWhere(g,r=>r.status==='הוגש'), color:'green', icon:'garnish'}
+  ];
+  const closureCards = [
+    {label:'סגירות בבדיקה', num:countWhere(cl,r=>r.status.indexOf('בדיקה')>-1), color:'blue', icon:'closure'},
+    {label:'סגירות בטיפול', num:countWhere(cl,r=>r.status==='בטיפול'), color:'orange', icon:'closure'},
+    {label:'סגירות שהושלמו', num:countWhere(cl,r=>r.status==='הושלם'), color:'green', icon:'closure'}
+  ];
+  const taskCards = [
+    {label:'משימות בבדיקה', num:countWhere(t,r=>r.status.indexOf('בדיקה')>-1), color:'blue', icon:'tasks'},
+    {label:'משימות בטיפול', num:countWhere(t,r=>r.status==='בטיפול'), color:'orange', icon:'tasks'},
+    {label:'משימות שהושלמו', num:countWhere(t,r=>r.status==='הושלם'), color:'green', icon:'tasks'}
+  ];
+
+  const block = (title,cards)=>`
+    <div class="section-block">
+      <h3>${title}</h3>
+      <div class="card-grid">
+        ${cards.map(cd=>`
+          <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:var(--${cd.color}-soft);color:var(--${cd.color});">${icon(cd.icon)}</div>
+            </div>
+            <p class="stat-num">${cd.num}</p>
+            <p class="stat-label">${cd.label}</p>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  return `
+    <div class="page-header">
+      <div>
+        <h2>סקירה כללית</h2>
+        <p class="sub">תמונת מצב מרוכזת של כלל הפעילות במשרד</p>
+      </div>
+    </div>
+    ${block('תביעות',claimsCards)}
+    ${block('עיקולים',garnishCards)}
+    ${block('סגירות חשבון',closureCards)}
+    ${block('משימות כלליות',taskCards)}
+  `;
+}
+
+/* ---------------- render: table page ---------------- */
+function buildFilterOptions(section){
+  const opts = {status:['all',...section.statuses]};
+  if(section.hasResponsibleField){
+    opts.responsible = ['all',...RESPONSIBLE];
+  } else {
+    const names = new Set();
+    state.data[section.key].forEach(r=>{ const rv=extractReviewer(r.status); if(rv) names.add(rv); });
+    opts.responsible = ['all',...Array.from(names)];
+  }
+  return opts;
+}
+
+function rowResponsible(section,row){
+  if(section.hasResponsibleField) return row.responsible;
+  return extractReviewer(row.status);
+}
+
+function filterRows(section,rows){
+  const f = state.filters[section.key];
+  return rows.filter(r=>{
+    if(f.status!=='all' && r.status!==f.status) return false;
+    if(f.responsible!=='all' && rowResponsible(section,r)!==f.responsible) return false;
+    return true;
+  });
+}
+
+function renderTable(section,rows,opts){
+  opts = opts||{};
+  const cols = section.columns;
+  const rowsHtml = rows.length ? rows.map(r=>`
+    <tr data-id="${r.id}">
+      ${cols.map(c=>renderCell(section,r,c)).join('')}
+      <td>
+        <div class="row-actions">
+          <button class="icon-btn danger" data-action="delete" data-section="${section.key}" data-id="${r.id}" aria-label="מחיקה">${icon('trash')}</button>
+        </div>
+      </td>
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="${cols.length+1}">אין רשומות להצגה</td></tr>`;
+
+  return `
+    <table>
+      <thead><tr>
+        ${cols.map(c=>`<th>${c.label}</th>`).join('')}
+        <th></th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+}
+
+function renderCell(section,row,col){
+  if(col.key==='status'){
+    const color = statusColor(row.status);
+    return `<td>
+      <select class="cell-select" data-section="${section.key}" data-id="${row.id}" data-field="status" style="${statusSelectStyle(color)}">
+        ${section.statuses.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </td>`;
+  }
+  if(col.key==='responsible'){
+    return `<td>
+      <select class="cell-select" data-section="${section.key}" data-id="${row.id}" data-field="responsible">
+        ${RESPONSIBLE.map(rv=>`<option value="${rv}" ${rv===row.responsible?'selected':''}>${rv}</option>`).join('')}
+      </select>
+    </td>`;
+  }
+  if(col.key==='caseType'){
+    return `<td>
+      <select class="cell-select" data-section="${section.key}" data-id="${row.id}" data-field="caseType">
+        ${CASE_TYPES.map(ct=>`<option value="${ct}" ${ct===row.caseType?'selected':''}>${ct}</option>`).join('')}
+      </select>
+    </td>`;
+  }
+  if(col.key==='notes'){
+    return `<td><input class="notes-input" type="text" value="${escapeAttr(row.notes||'')}" data-section="${section.key}" data-id="${row.id}" data-field="notes" placeholder="הערה..."></td>`;
+  }
+  if(col.key==='prepDate'){
+    return `<td><input class="notes-input" type="date" value="${escapeAttr(row.prepDate||'')}" data-section="${section.key}" data-id="${row.id}" data-field="prepDate"></td>`;
+  }
+  return `<td><input class="notes-input" type="text" value="${escapeAttr(row[col.key]||'')}" data-section="${section.key}" data-id="${row.id}" data-field="${col.key}"></td>`;
+}
+
+function statusSelectStyle(color){
+  const map = {
+    green:'background:var(--green-soft);color:var(--green);border-color:var(--green);',
+    orange:'background:var(--orange-soft);color:var(--orange);border-color:var(--orange);',
+    blue:'background:var(--blue-soft);color:var(--blue);border-color:var(--blue);',
+    gray:'background:var(--gray-soft);color:var(--gray);border-color:var(--gray);'
+  };
+  return (map[color]||map.gray) + 'font-weight:500;';
+}
+
+function formatDate(d){
+  const parts=d.split('-');
+  if(parts.length===3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  return d;
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escapeAttr(s){return escapeHtml(s);}
+
+function renderSectionPage(section){
+  const all = state.data[section.key];
+  const active = all.filter(r=>!section.isFinished(r.status));
+  const finished = all.filter(r=>section.isFinished(r.status));
+  const activeFiltered = filterRows(section,active);
+  const opts = buildFilterOptions(section);
+  const f = state.filters[section.key];
+
+  return `
+    <div class="page-header">
+      <div>
+        <h2>${section.title}</h2>
+        <p class="sub">ניהול ${section.title} פעילים ומעקב אחר סטטוס טיפול</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn" data-action="print-section" data-section="${section.key}">${icon('print')}<span>הדפסה</span></button>
+        <button class="btn btn-primary" data-action="add" data-section="${section.key}">${icon('plus')}<span>הוספת ${section.singular}</span></button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><h3>${section.title} פעילים</h3><span class="count-pill">${activeFiltered.length}</span></div>
+        <div class="filters">
+          <select data-role="filter" data-section="${section.key}" data-field="status">
+            <option value="all">כל הסטטוסים</option>
+            ${section.statuses.filter(s=>!section.isFinished(s)).map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+          <select data-role="filter" data-section="${section.key}" data-field="responsible">
+            <option value="all">כל האחראים</option>
+            ${opts.responsible.filter(r=>r!=='all').map(r=>`<option value="${r}" ${f.responsible===r?'selected':''}>${r}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      ${renderTable(section,activeFiltered)}
+    </div>
+
+    <div class="panel sub-panel">
+      <div class="panel-head">
+        <div class="panel-title"><h3>${section.finishedLabel}</h3><span class="count-pill">${finished.length}</span></div>
+      </div>
+      ${renderTable(section,finished)}
+    </div>
+  `;
+}
+
+/* ---------------- main render ---------------- */
+function render(){
+  renderNav();
+  const main = document.getElementById('main');
+  if(state.currentPage==='dashboard'){
+    main.innerHTML = renderDashboard();
+  } else {
+    main.innerHTML = renderSectionPage(SECTIONS[state.currentPage]);
+  }
+  bindTableEvents();
+}
+
+function bindTableEvents(){
+  document.querySelectorAll('[data-role="filter"]').forEach(sel=>{
+    sel.addEventListener('change',()=>{
+      state.filters[sel.dataset.section][sel.dataset.field]=sel.value;
+      render();
+    });
+  });
+  document.querySelectorAll('.cell-select, .notes-input').forEach(el=>{
+    const evt = el.tagName==='SELECT'?'change':'input';
+    el.addEventListener(evt,()=>{
+      const {section,id,field}=el.dataset;
+      const row = state.data[section].find(r=>r.id===id);
+      if(row){ row[field]=el.value; saveState(); if(el.tagName==='SELECT') render(); }
+    });
+  });
+  document.querySelectorAll('[data-action="delete"]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const {section,id}=btn.dataset;
+      openDeleteConfirm(section,id);
+    });
+  });
+  document.querySelectorAll('[data-action="add"]').forEach(btn=>{
+    btn.addEventListener('click',()=>openAddModal(btn.dataset.section));
+  });
+  document.querySelectorAll('[data-action="print-section"]').forEach(btn=>{
+    btn.addEventListener('click',()=>printSection(btn.dataset.section));
+  });
+}
+
+/* ---------------- add modal ---------------- */
+function openAddModal(sectionKey){
+  const section = SECTIONS[sectionKey];
+  const modal = document.getElementById('modalBody');
+  modal.innerHTML = `
+    <h3>הוספת ${section.singular}</h3>
+    <div id="addFields">
+      ${section.fields.map(f=>{
+        if(f.type==='select'){
+          return `<div class="field"><label>${f.label}</label><select name="${f.key}">${f.options.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div>`;
+        }
+        return `<div class="field"><label>${f.label}</label><input name="${f.key}" type="${f.type}"></div>`;
+      }).join('')}
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="cancelModal">ביטול</button>
+      <button type="button" class="btn btn-primary" id="saveAddBtn">שמור והוסף</button>
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('cancelModal').addEventListener('click',closeModal);
+  document.getElementById('saveAddBtn').addEventListener('click',()=>{
+    const container = document.getElementById('addFields');
+    const row = {id:uid()};
+    section.fields.forEach(f=>{
+      const el = container.querySelector(`[name="${f.key}"]`);
+      row[f.key] = el ? el.value : '';
+    });
+    if(!row.caseNumber || !row.caseName){ showToast('נא למלא מספר תיק ושם תיק'); return; }
+    state.data[sectionKey].push(row);
+    saveState(); closeModal(); state.currentPage=sectionKey; render(); showToast('נוסף בהצלחה');
+  });
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
+document.getElementById('overlay').addEventListener('click',(e)=>{ if(e.target.id==='overlay') closeModal(); });
+
+function openDeleteConfirm(sectionKey,id){
+  const modal = document.getElementById('modalBody');
+  modal.innerHTML = `
+    <h3>מחיקת רשומה</h3>
+    <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 4px;">האם למחוק את הרשומה? פעולה זו אינה הפיכה.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="cancelDelete">ביטול</button>
+      <button type="button" class="btn" style="background:#B4302E;color:#fff;border-color:#B4302E;" id="confirmDelete">מחיקה</button>
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('cancelDelete').addEventListener('click',closeModal);
+  document.getElementById('confirmDelete').addEventListener('click',()=>{
+    state.data[sectionKey] = state.data[sectionKey].filter(r=>r.id!==id);
+    saveState(); closeModal(); render(); showToast('הרשומה נמחקה');
+  });
+}
+
+/* ---------------- toast ---------------- */
+let toastTimer=null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ---------------- printing ---------------- */
+function printTableHtml(section,rows,heading){
+  return `
+    ${heading?`<h3>${heading}</h3>`:''}
+    <table>
+      <thead><tr>${section.columns.map(c=>`<th>${c.label}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${rows.length ? rows.map(r=>`<tr>${section.columns.map(c=>`<td>${c.key==='prepDate' && r[c.key] ? formatDate(r[c.key]) : escapeHtml(r[c.key]||'')}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${section.columns.length}">אין רשומות</td></tr>`}
+      </tbody>
+    </table>`;
+}
+
+function printSection(sectionKey){
+  const section = SECTIONS[sectionKey];
+  const all = state.data[sectionKey];
+  const active = all.filter(r=>!section.isFinished(r.status));
+  const dateStr = new Date().toLocaleDateString('he-IL');
+  const html = `
+    <div class="print-doc">
+      <h1>דוח ${section.title}</h1>
+      <p class="print-sub">הופק בתאריך ${dateStr}</p>
+      ${printTableHtml(section,active,`${section.title} פעילים`)}
+    </div>`;
+  runPrint(html);
+}
+
+function printCombinedReport(){
+  const dateStr = new Date().toLocaleDateString('he-IL');
+  let html = `<div class="print-doc"><h1>דוח מרוכז - תיקים בבדיקה</h1><p class="print-sub">הופק בתאריך ${dateStr}</p>`;
+
+  Object.values(SECTIONS).forEach(section=>{
+    const reviewRows = state.data[section.key].filter(r=>r.status.indexOf('בדיקה')>-1);
+    if(!reviewRows.length) return;
+    html += `<h2>${section.title}</h2>`;
+    const groups = {};
+    reviewRows.forEach(r=>{
+      const name = rowResponsible(section,r) || 'לא משויך';
+      if(!groups[name]) groups[name]=[];
+      groups[name].push(r);
+    });
+    Object.keys(groups).sort().forEach(name=>{
+      html += `<h3>אחראי: ${name}</h3>`;
+      html += printTableHtml(section,groups[name],'');
+    });
+  });
+  html += `</div>`;
+
+  const hasAny = Object.values(SECTIONS).some(s=>state.data[s.key].some(r=>r.status.indexOf('בדיקה')>-1));
+  if(!hasAny){ showToast('אין תיקים בבדיקה כרגע'); return; }
+  runPrint(html);
+}
+
+function runPrint(html){
+  const area = document.getElementById('printArea');
+  area.innerHTML = html;
+  document.body.classList.add('print-mode');
+  setTimeout(()=>{
+    window.print();
+  },50);
+}
+window.addEventListener('afterprint',()=>{
+  document.body.classList.remove('print-mode');
+  document.getElementById('printArea').innerHTML='';
+});
+
+document.getElementById('combinedReportBtn').addEventListener('click',printCombinedReport);
+
+loadState();
+</script>
+</body>
+</html>
