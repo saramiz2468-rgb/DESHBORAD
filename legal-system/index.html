@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E1F33">
+<title>מערכת ניהול תיקים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app"></div>
+<noscript>יש להפעיל JavaScript כדי להשתמש במערכת.</noscript>
+<script type="text/x-dc-template" id="tpl">
+<div dir="rtl" class="{{rootCls}}" style="min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'SF Hebrew', 'Segoe UI', 'Heebo', 'Assistant', Arial, sans-serif; color: #1E2A33; background-color: #F3F6F8; background-image: radial-gradient(1100px 480px at 85% -12%, rgba(30,90,132,.10), transparent 60%), radial-gradient(900px 420px at 0% -6%, rgba(28,133,130,.09), transparent 60%); display: flex; position: relative">
+
+<aside class="sidebar noprint">
+<div style="display: flex; align-items: center; gap: 11px; padding: 0 6px">
+<div style="position: relative; width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(145deg,#E2EDF5,#E2F1F0); display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: none; stroke: #1E5A84; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round"><path d="M12 3v18M5 7h14M7 7l-3 7a3 3 0 0 0 6 0zM17 7l-3 7a3 3 0 0 0 6 0zM8 21h8"></path></svg>
+</div>
+<div>
+<div class="brandw">LEXOPS</div>
+<div style="font-size: 13px; color: #5B6B75">ניהול תיקים</div>
+</div>
+</div>
+<div class="flow" aria-hidden="true"></div>
+<nav aria-label="ניווט ראשי" style="display: flex; flex-direction: column; gap: 16px">
+<sc-for list="{{navGroups}}" as="grp" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div class="navgrp">{{grp.label}}</div>
+<sc-for list="{{grp.items}}" as="n" hint-placeholder-count="4">
+<button type="button" class="{{n.cls}}" onClick="{{n.go}}">
+<svg aria-hidden="true" viewBox="0 0 24 24"><path d="{{n.d}}"></path></svg>
+<span>{{n.label}}</span>
+<sc-if value="{{n.hasBadge}}" hint-placeholder-val="{{ false }}"><span class="{{n.badgeCls}}">{{n.badge}}</span></sc-if>
+</button>
+</sc-for>
+</div>
+</sc-for>
+</nav>
+<div class="note" style="margin-top: auto">
+<div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #1E2A33"><span class="live"></span>מנוע אוטומציה פעיל</div>
+<div style="margin-top: 4px">{{rulesOn}} כללים · {{autoToday}} פעולות היום</div>
+<div style="font-size: 12px; margin-top: 8px">הנתונים נשמרים בדפדפן של מחשב זה. מומלץ לייצא גיבוי מדי פעם.</div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px">
+<button type="button" class="btn sm" onClick="{{exportData}}">ייצוא גיבוי</button>
+<label class="btn sm" style="cursor: pointer">ייבוא נתונים<input type="file" accept=".json,application/json" onChange="{{importData}}" style="position: absolute; width: 1px; height: 1px; opacity: 0"></label>
+</div>
+</div>
+</aside>
+
+<main class="main">
+<div class="noprint" style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; height: auto; padding: 0 0 4px; margin-bottom: 18px; font-size: 12px; color: #4B5570">
+<span class="mono" style="display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px"><span class="live"></span>{{todayLabel}}</span>
+<div class="telem">
+<sc-for list="{{telem}}" as="t" hint-placeholder-count="5"><span class="tm"><span class="tk">{{t.k}}</span><span class="tv">{{t.v}}</span></span></sc-for>
+</div>
+<div style="margin-right: auto; display: flex; gap: 8px; flex-wrap: wrap">
+<label style="position: relative; display: flex; align-items: center">
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">חיפוש</span>
+<input type="search" placeholder="חיפוש תיק, חייב או מספר…" style="min-height: 36px; width: 240px; max-width: 100%; padding: 0 12px; border-radius: 5px; border: 1px solid #D3D9E5; background: #fff; font-size: 13px">
+</label>
+</div>
+</div>
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 20px">
+<div>
+<div class="tlabel">{{pageCode}}</div>
+<h1 style="margin: 6px 0 0; font-size: 28px; font-weight: 600; letter-spacing: -.02em; color: #0B1324">{{pageTitle}}</h1>
+<p style="margin: 6px 0 0; font-size: 13.5px; color: #4B5570; max-width: 760px; line-height: 1.6">{{pageSub}}</p>
+</div>
+<div class="noprint" style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" class="btn" onClick="{{print}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"></path></svg>הדפסה</button>
+<button type="button" class="btn" onClick="{{printReport}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6"></path></svg>דוח מרוכז</button>
+<button type="button" class="btn acc" onClick="{{newItem}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>חדש</button>
+</div>
+</header>
+
+<sc-if value="{{hasTabs}}" hint-placeholder-val="{{ false }}">
+<div class="tabs noprint" role="tablist" aria-label="לשוניות">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3"><button type="button" role="tab" aria-selected="{{t.on}}" class="{{t.cls}}" onClick="{{t.pick}}">{{t.label}}<span class="cnt">{{t.n}}</span></button></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{hasSF}}" hint-placeholder-val="{{ false }}">
+<div class="noprint" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: -6px 0 16px">
+<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: #5B6B75">סינון לפי סטטוס
+<select class="{{sfCls}}" value="{{sfVal}}" onChange="{{sfSet}}" style="min-height: 38px; max-width: 280px">
+<sc-for list="{{sfOpts}}" as="o" hint-placeholder-count="5"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+</select></label>
+<sc-if value="{{sfActive}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn sm ghost" onClick="{{sfClear}}">ניקוי סינון</button></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{isHome}}" hint-placeholder-val="{{ true }}">
+<div class="bento home">
+<section class="tile hero rise" style="grid-column: span 12">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 24px; position: relative; z-index: 1">
+<div class="ring" role="img" aria-label="{{ringLabel}}">
+<svg viewBox="0 0 120 120"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5EEAD4"></stop><stop offset="1" stop-color="#60A5FA"></stop></linearGradient></defs><circle cx="60" cy="60" r="52" style="fill: none; stroke: rgba(255,255,255,.1); stroke-width: 10"></circle><circle cx="60" cy="60" r="52" style="{{ringStyle}}"></circle></svg>
+<div class="center"><div><b style="font-size: 36px; font-weight: 600; line-height: 1; display: block; font-variant-numeric: tabular-nums">{{actionN}}</b><span style="font-size: 12px; color: rgba(255,255,255,.65)">דורש פעולה</span></div></div>
+</div>
+<div style="flex: 1 1 320px; min-width: 0">
+<div class="brandw" style="color: #7FD3CF">{{todayLabel}}</div>
+<h2 style="margin: 6px 0 6px; font-size: 22px; font-weight: 600">{{heroGreeting}}</h2>
+<p style="margin: 0; font-size: 14.5px; line-height: 1.7; color: rgba(255,255,255,.78)">{{heroBrief}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px">
+<sc-for list="{{heroChips}}" as="c" hint-placeholder-count="4"><button type="button" class="chip-sm" onClick="{{c.go}}">{{c.label}}</button></sc-for>
+</div>
+<div style="display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; align-items: center">
+<button type="button" class="btn acc" onClick="{{goUrgent}}">לטיפול עכשיו</button>
+<button type="button" class="{{autoCls}}" onClick="{{toggleAuto}}" aria-pressed="{{autopilot}}"><span class="dot" aria-hidden="true"></span>טייס אוטומטי · {{autoLabel}}</button>
+</div>
+<div style="font-size: 12.5px; color: rgba(255,255,255,.6); margin-top: 10px">{{autoHint}}</div>
+</div>
+</div>
+</section>
+<sc-for list="{{kpis}}" as="c" hint-placeholder-count="4">
+<button type="button" class="tile kpi rise" onClick="{{c.go}}" style="{{c.style}}">
+<span class="sweep" aria-hidden="true"></span>
+<span style="display: flex; align-items: center; justify-content: space-between"><span class="tlabel">{{c.code}}</span><span class="kic" style="{{c.icBg}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="{{c.ic}}"></path></svg></span></span>
+<span style="display: flex; align-items: flex-end; justify-content: space-between; margin-top: 14px">
+<span class="big">{{c.n}}</span>
+<span class="{{c.sig}}"><i></i>{{c.tag}}</span>
+</span>
+<span style="display: block; font-size: 13.5px; color: #3B4560; margin-top: 10px">{{c.label}}</span>
+</button>
+</sc-for>
+
+<section class="tile rise" style="grid-column: span 7">
+<div class="th"><h2>רדאר מועדים · 14 ימים</h2><span class="tlabel" style="margin-right: auto">AUTO-CALCULATED</span></div>
+<div>
+<sc-for list="{{deadlines}}" as="d" hint-placeholder-count="6">
+<button type="button" class="dl" onClick="{{d.go}}">
+<span class="dd" style="{{d.boxStyle}}"><span style="font-size: 17px; font-weight: 600">{{d.left}}</span><span style="font-size: 9.5px">{{d.unit}}</span></span>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<span style="font-size: 13.5px; font-weight: 500">{{d.title}}</span>
+<span style="font-size: 12px; color: #6B7590">{{d.sub}}</span>
+</span>
+<span class="law">{{d.rule}}</span>
+</button>
+</sc-for>
+<sc-if value="{{noDeadlines}}" hint-placeholder-val="{{ false }}"><div style="padding: 28px 8px; text-align: center; color: #8E9CA4; font-size: 14px">אין מועדים ב-14 הימים הקרובים. מועדים יופיעו כאן אוטומטית אחרי שמקלידים תאריכי מסירה.</div></sc-if>
+</div>
+</section>
+
+<section class="tile rise" style="grid-column: span 5">
+<div class="th"><h2>הצעות המערכת לאישור</h2><span class="nbadge" style="margin-right: auto">{{suggCount}}</span></div>
+<sc-if value="{{noSugg}}" hint-placeholder-val="{{ false }}"><p style="font-size: 13.5px; color: #6B7590; margin: 8px 0">אין הצעות פתוחות. המערכת תציע כאן פעולות כשתזהה מועד או שינוי.</p></sc-if>
+<sc-for list="{{suggs}}" as="g" hint-placeholder-count="4">
+<div class="sugg">
+<span class="auto" style="margin-top: 2px">AI</span>
+<div style="flex: 1; min-width: 0">
+<div style="font-size: 13.5px; line-height: 1.5">{{g.text}}</div>
+<div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap">
+<button type="button" class="btn sm pri" onClick="{{g.yes}}">{{g.yesLabel}}</button>
+<button type="button" class="btn sm ghost" onClick="{{g.no}}">התעלם</button>
+</div>
+</div>
+</div>
+</sc-for>
+</section>
+
+<section class="tile rise" style="grid-column: span 8">
+<div class="th"><h2>מצב לפי תחום וסטטוס</h2><span class="tlabel" style="margin-right: auto">LIVE MATRIX</span></div>
+<div class="scroll">
+<table>
+<thead><tr><th>תחום</th><th>בבדיקה</th><th>בטיפול</th><th>ממתין</th><th>הוגש / הושלם</th></tr></thead>
+<tbody>
+<sc-for list="{{matrix}}" as="m" hint-placeholder-count="5">
+<tr style="cursor: pointer" onClick="{{m.go}}">
+<td style="font-weight: 600">{{m.name}}</td>
+<td><span class="sig s-review"><i></i>{{m.review}}</span></td>
+<td><span class="sig s-prog"><i></i>{{m.prog}}</span></td>
+<td><span class="sig s-wait"><i></i>{{m.wait}}</span></td>
+<td><span class="sig s-done"><i></i>{{m.done}}</span></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="tile rise" style="grid-column: span 4">
+<div class="th"><h2>עומס בדיקות</h2></div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{people}}" as="p" hint-placeholder-count="6">
+<div style="display: grid; grid-template-columns: 66px 1fr 26px; align-items: center; gap: 10px; font-size: 13.5px">
+<span style="font-weight: 500">{{p.name}}</span>
+<div class="bar"><div style="{{p.w}}"></div></div>
+<span class="mono" style="text-align: left; font-size: 12.5px">{{p.n}}</span>
+</div>
+</sc-for>
+</div>
+<div style="margin-top: 14px; padding: 10px 12px; border-radius: 5px; background: #F4F6FB; font-size: 12.5px; color: #3B4560; line-height: 1.5">{{balanceTip}}</div>
+</section>
+
+<section class="tile rise" style="grid-column: span 12">
+<div class="th"><h2>יומן פעולות</h2><span class="live" style="margin-right: 4px"></span><span class="tlabel" style="margin-right: auto">מתעדכן בזמן אמת</span></div>
+<sc-for list="{{log}}" as="l" hint-placeholder-count="5">
+<div class="sugg" style="align-items: center"><span class="casebtn" style="cursor: default; background: #EBF0F2; color: #5B6B75">{{l.t}}</span><span style="font-size: 14px">{{l.m}}</span></div>
+</sc-for>
+</section>
+<section class="tile rise" style="grid-column: span 12">
+<div class="th"><h2>צינור פסקי דין</h2><span class="tlabel">CLAIM → JUDGMENT → EXECUTION</span><button type="button" class="btn sm ghost" onClick="{{goJ}}" style="margin-right: auto">פתח ←</button></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px">
+<sc-for list="{{pipeline}}" as="p" hint-placeholder-count="7">
+<div style="padding: 12px; border-radius: 18px; border: 0; background: #F5F7F8; position: relative; overflow: hidden">
+<div aria-hidden="true" style="{{p.fill}}"></div>
+<div class="mono" style="font-size: 22px; font-weight: 600; position: relative">{{p.n}}</div>
+<div style="font-size: 12px; color: #3B4560; margin-top: 4px; position: relative">{{p.label}}</div>
+</div>
+</sc-for>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{isTable}}" hint-placeholder-val="{{ false }}">
+<div class="noprint" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px">
+<span class="tlabel" style="margin-left: 4px">אחראית</span>
+<sc-for list="{{ownerChips}}" as="o" hint-placeholder-count="7"><button type="button" class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
+</div>
+<sc-if value="{{tp.showActive}}" hint-placeholder-val="{{ true }}">
+<section class="tile rise" style="padding: 0; margin-bottom: 18px">
+<div class="th" style="padding: 16px 18px 0">
+<h2>{{tp.activeTitle}}</h2><span class="nbadge">{{tp.activeCount}}</span>
+<sc-if value="{{tp.hint}}" hint-placeholder-val="{{ false }}"><span class="auto">{{tp.hintText}}</span></sc-if>
+<button type="button" class="btn sm noprint" onClick="{{print}}" style="margin-right: auto">הדפסת טבלה</button>
+</div>
+<div class="scroll">
+<table>
+<thead><tr><th>מספר תיק</th><th>שם תיק</th><th>{{tp.extraLabel}}</th><th>אחראית</th><th>סטטוס</th><th>הערות</th><th><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">פעולות</span></th></tr></thead>
+<tbody>
+<sc-for list="{{tp.active}}" as="r" hint-placeholder-count="5">
+<tr>
+<td><button type="button" class="casebtn" onClick="{{r.open360}}">{{r.num}}</button></td>
+<td style="font-weight: 500">{{r.name}} <sc-if value="{{r.auto}}" hint-placeholder-val="{{ false }}"><span class="auto">{{r.autoLabel}}</span></sc-if></td>
+<td style="color: #3B4560">{{r.extra}}</td>
+<td>{{r.owner}}</td>
+<td><span class="{{r.sig}}"><i></i>{{r.status}}</span></td>
+<td style="color: #4B5570; max-width: 240px">{{r.note}}</td>
+<td class="noprint" style="white-space: nowrap; text-align: left">
+<button type="button" class="ib" aria-label="עריכה" onClick="{{r.edit}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16zM14 6l4 4"></path></svg></button>
+<button type="button" class="ib" aria-label="מחיקה" onClick="{{r.del}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"></path></svg></button>
+</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<sc-if value="{{tp.noActive}}" hint-placeholder-val="{{ false }}"><div style="padding: 34px 18px; text-align: center; color: #8E9CA4; font-size: 14px">אין נתונים בטבלה זו. לחיצה על "חדש" תוסיף שורה.</div></sc-if>
+</section>
+</sc-if>
+<sc-if value="{{tp.showSvc}}" hint-placeholder-val="{{ false }}">
+<section class="tile rise" style="padding: 0; margin-bottom: 18px">
+<div class="th" style="padding: 16px 18px 12px; margin: 0; border-bottom: 1px solid #E2E8EB; flex-wrap: wrap">
+<h2>תביעות בימ״ש שהוגשו · ממתינות למסירה אישית</h2><span class="nbadge">{{tp.svcCount}}</span>
+<span class="auto">אוטומציה</span><span style="font-size: 12.5px; color: #5B6B75">הקלדת תאריך מסירה מעבירה את התיק לפסקי דין ומפעילה את ספירת 60 הימים</span>
+</div>
+<sc-for list="{{tp.svc}}" as="v" hint-placeholder-count="2">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 14px 18px; border-bottom: 1px solid #E2E8EB">
+<button type="button" class="casebtn" onClick="{{v.open360}}">{{v.num}}</button>
+<span style="font-weight: 600; flex: 1 1 180px">{{v.name}}</span>
+<span style="font-size: 13px; color: #5B6B75">עו״ד {{v.owner}}</span>
+<span class="sig s-wait"><i></i>ממתין למסירה · {{v.waitText}}</span>
+<label class="field" style="flex-direction: row; align-items: center; gap: 8px; font-size: 13px">תאריך מסירה אישית<input class="din" type="date" value="" onChange="{{v.setServed}}"></label>
+<button type="button" class="btn sm" onClick="{{v.insolv}}" style="color: #A2803F">לקוח בחדל״פ</button>
+<span style="display: inline-flex; gap: 6px"><button type="button" class="ib" aria-label="עריכה" onClick="{{v.edit}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16zM14 6l4 4"></path></svg></button><button type="button" class="ib" aria-label="מחיקה" onClick="{{v.del}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"></path></svg></button></span>
+</div>
+</sc-for>
+<sc-if value="{{tp.noSvc}}" hint-placeholder-val="{{ false }}"><div style="padding: 30px 18px; text-align: center; color: #8E9CA4; font-size: 14px">אין תביעות שממתינות לאישור מסירה.</div></sc-if>
+</section>
+</sc-if>
+<sc-if value="{{tp.showDone}}" hint-placeholder-val="{{ false }}">
+<section class="tile" style="padding: 0; background: #FBFCFE">
+<div class="th" style="padding: 14px 18px 0"><span class="sig s-done"><i></i>{{tp.doneTitle}}</span><span class="nbadge">{{tp.doneCount}}</span></div>
+<div class="scroll">
+<table>
+<tbody>
+<sc-for list="{{tp.done}}" as="r" hint-placeholder-count="2">
+<tr>
+<td style="width: 120px"><button type="button" class="casebtn" onClick="{{r.open360}}">{{r.num}}</button></td>
+<td style="color: #3B4560">{{r.name}}</td>
+<td style="color: #6B7590">{{r.extra}}</td>
+<td style="color: #6B7590">{{r.owner}}</td>
+<td><span class="{{r.sig}}"><i></i>{{r.status}}</span></td>
+<td class="noprint" style="text-align: left; white-space: nowrap"><button type="button" class="ib" aria-label="עריכה" onClick="{{r.edit}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16zM14 6l4 4"></path></svg></button><button type="button" class="ib" aria-label="מחיקה" onClick="{{r.del}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"></path></svg></button></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{isMisc}}" hint-placeholder-val="{{ false }}">
+<section class="tile rise" style="padding: 0">
+<div class="th" style="padding: 16px 18px 0"><h2>שונות</h2><span class="nbadge">{{miscCount}}</span><button type="button" class="btn sm acc noprint" onClick="{{addMisc}}" style="margin-right: auto">הוספת שורה</button></div>
+<div class="scroll">
+<table>
+<thead><tr><th>מספר תיק</th><th>שם תיק</th><th>הערה</th><th><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">פעולות</span></th></tr></thead>
+<tbody>
+<sc-for list="{{misc}}" as="r" hint-placeholder-count="4">
+<tr>
+<td style="width: 130px"><button type="button" class="casebtn" onClick="{{r.open360}}">{{r.num}}</button></td>
+<td style="font-weight: 500; width: 260px">{{r.name}}</td>
+<td style="color: #3B4560">{{r.note}}</td>
+<td class="noprint" style="white-space: nowrap; text-align: left; width: 90px">
+<button type="button" class="ib" aria-label="עריכה" onClick="{{r.edit}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16zM14 6l4 4"></path></svg></button>
+<button type="button" class="ib" aria-label="מחיקה" onClick="{{r.del}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"></path></svg></button>
+</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<sc-if value="{{noMisc}}" hint-placeholder-val="{{ false }}"><div style="padding: 34px 18px; text-align: center; color: #8E9CA4; font-size: 14px">אין שורות בשונות.</div></sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{isJ}}" hint-placeholder-val="{{ false }}">
+<div class="bento" style="margin-bottom: 16px">
+<div class="tile" style="grid-column: span 4; padding: 14px 16px"><div class="tlabel">כלל 1</div><div style="font-size: 13.5px; margin-top: 6px">60 יום ממסירת כתב התביעה → ניתן לבקש פס״ד</div><div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap"><span class="law">תקנה 13(א), 130 · תסד״א 2018</span><span class="verify">לאימות</span></div></div>
+<div class="tile" style="grid-column: span 4; padding: 14px 16px"><div class="tlabel">כלל 2</div><div style="font-size: 13.5px; margin-top: 6px">30 יום ממסירת פסיקתא → פתיחת תיק הוצל״פ</div><div style="margin-top: 8px"><span class="law">כלל משרדי</span></div></div>
+<div class="tile" style="grid-column: span 4; padding: 14px 16px"><div class="tlabel">כלל 3</div><div style="font-size: 13.5px; margin-top: 6px">מועד שחל בשבת נדחה ליום א׳</div><div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap"><span class="law">חוק הפרשנות · סעיף 10</span><span class="verify">לאימות</span></div></div>
+</div>
+<div class="noprint" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px">
+<span class="tlabel" style="margin-left: 4px">עו״ד מטפלת</span>
+<sc-for list="{{ownerChips}}" as="o" hint-placeholder-count="7"><button type="button" class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
+</div>
+<section class="tile rise" style="padding: 0">
+<div class="th" style="padding: 16px 18px 12px; margin: 0; border-bottom: 1px solid #E3E7EF"><h2>פסקי דין · תביעות בית משפט</h2><span class="nbadge">{{jCount}}</span><span class="tlabel" style="margin-right: auto">לחצי על שורה לפתיחת מסלול</span></div>
+<div class="jrow" style="cursor: default; background: #FAFBFD;  font-size: 11.5px; color: #6B7590">
+<span>מספר תיק</span><span>שם תיק</span><span>עו״ד מטפלת</span><span>סטטוס</span><span>שלב במסלול</span><span>ניתן להגיש מ־</span><span></span>
+</div>
+<sc-for list="{{judg}}" as="j" hint-placeholder-count="6">
+<div>
+<button type="button" class="jrow" onClick="{{j.toggle}}" aria-expanded="{{j.open}}">
+<span class="mono" style="color: #1E3A8A; font-size: 12.5px">{{j.num}}</span>
+<span style="font-weight: 500">{{j.name}}</span>
+<span>{{j.owner}}</span>
+<span><span class="{{j.sig}}"><i></i>{{j.status}}</span></span>
+<span style="display: flex; flex-direction: column; gap: 5px">
+<span style="font-size: 12.5px; color: #3B4560">{{j.stageLabel}}</span>
+<span class="bar"><span style="{{j.progW}}"></span></span>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px">
+<span class="mono" style="{{j.rowDateStyle}}">{{j.rowDate}}</span>
+<span style="font-size: 11.5px; color: #6B7590">{{j.rowDateNote}}</span>
+</span>
+<span aria-hidden="true" style="text-align: left; color: #6B7590">{{j.chev}}</span>
+</button>
+<sc-if value="{{j.open}}" hint-placeholder-val="{{ false }}">
+<div class="jpanel">
+<div class="track">
+<sc-for list="{{j.steps}}" as="s" hint-placeholder-count="7">
+<div class="{{s.cls}}"><span class="d">{{s.n}}</span><span>{{s.label}}</span></div>
+</sc-for>
+</div>
+<sc-if value="{{j.a0}}" hint-placeholder-val="{{ false }}">
+<div class="act">
+<span class="auto">שלב 1</span>
+<label class="field" style="flex-direction: row; align-items: center; gap: 10px">תאריך מסירת כתב התביעה (לפי נבו)<input class="din" type="date" value="{{j.servedISO}}" onChange="{{j.setServed}}"></label>
+<span style="font-size: 13px; color: #3B4560">{{j.promptText}}</span>
+<span class="law">תקנה 13(א) · 60 יום</span>
+</div>
+<sc-if value="{{j.hasServed}}" hint-placeholder-val="{{ false }}">
+<div class="dates">
+<div class="datecard main"><span class="tlabel">ניתן להגיש בקשה לפס״ד מ־</span><span class="dval">{{j.eligText}}</span><span class="dsub">{{j.countText}}</span></div>
+<div class="datecard"><span class="tlabel">מועד אחרון לכתב הגנה</span><span class="dval">{{j.deadlineText}}</span><span style="font-size: 12px; color: #6B7590">{{j.shiftNote}}</span></div>
+<div class="datecard"><span class="tlabel">תזכורות שנקבעו אוטומטית</span><span style="font-size: 13px; line-height: 1.6">7 ימים לפני · יום לפני · ביום עצמו</span><span class="auto" style="align-self: flex-start">לעו״ד {{j.owner}}</span></div>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{j.a1}}" hint-placeholder-val="{{ false }}">
+<div class="act hot">
+<span class="sig s-alert"><i></i>חלפו {{j.servedDays}} ימים</span>
+<span style="font-size: 13.5px; flex: 1 1 260px">לא הוגש כתב הגנה במועד. ניתן להגיש בקשה למתן פסק דין בהיעדר הגנה.</span>
+<span class="law">תקנה 130</span>
+<button type="button" class="btn sm acc" onClick="{{j.sentNet}}">נשלחה בקשה בנט</button>
+</div>
+<div class="dates">
+<div class="datecard main late"><span class="tlabel">ניתן להגיש מ־</span><span class="dval">{{j.eligText}}</span><span class="dsub">{{j.countText}}</span></div>
+<div class="datecard"><span class="tlabel">מסירת כתב התביעה</span><span class="dval">{{j.servedText}}</span></div>
+</div>
+</sc-if>
+<sc-if value="{{j.exited}}" hint-placeholder-val="{{ false }}">
+<div class="act" style="background: #F5EEDF; border-color: transparent"><span class="sig s-gold"><i></i>{{j.exitText}}</span><span style="font-size: 13.5px">התיק יצא ממסלול פסק הדין. המשימות והתזכורות שלו הוסרו.</span></div>
+</sc-if>
+<sc-if value="{{j.showFiling}}" hint-placeholder-val="{{ false }}">
+<div class="act" style="background: linear-gradient(135deg,#F2F7FB,#EFF8F7)">
+<span class="auto">מועד הגשת בקשה לפס״ד</span>
+<label class="field" style="flex-direction: row; align-items: center; gap: 10px">תאריך שעו״ד קבעה (לפי נבו)<input class="din" type="date" value="{{j.filingISO}}" onChange="{{j.setFiling}}"></label>
+<button type="button" class="btn sm" onClick="{{j.useCalc}}">קבע לפי החישוב · {{j.eligShort}}</button>
+<span class="{{j.filingSig}}"><i></i>{{j.filingNote}}</span>
+</div>
+</sc-if>
+<sc-if value="{{j.a2}}" hint-placeholder-val="{{ false }}">
+<div class="act">
+<span class="sig s-net"><i></i>בקשה בנט</span>
+<span style="font-size: 13.5px; flex: 1 1 200px">התקבלה החלטה?</span>
+<button type="button" class="btn sm pri" onClick="{{j.gotJudgment}}">ניתן פסק דין</button>
+<button type="button" class="btn sm" onClick="{{j.otherDecision}}">החלטה אחרת</button>
+</div>
+<sc-if value="{{j.showOther}}" hint-placeholder-val="{{ false }}">
+<div class="act">
+<label class="field" style="flex: 1 1 320px">איזו משימה צריך לעשות בעקבות ההחלטה?<textarea rows="2" placeholder="לדוגמה: להשלים תצהיר המצאה"></textarea></label>
+<button type="button" class="btn sm acc" onClick="{{j.makeTask}}">צור משימה</button>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{j.a3}}" hint-placeholder-val="{{ false }}">
+<div class="act">
+<span class="sig s-done"><i></i>ניתן פסק דין</span>
+<label class="field" style="flex-direction: row; align-items: center; gap: 10px">פסיקתא נחתמה · תאריך מסירה אישית (לפי נבו)<input class="din" type="date" value="" onChange="{{j.setPServed}}"></label>
+</div>
+</sc-if>
+<sc-if value="{{j.a4}}" hint-placeholder-val="{{ false }}">
+<div class="act">
+<span class="sig s-wait"><i></i>נשלח במסירה אישית</span>
+<label class="field" style="flex-direction: row; align-items: center; gap: 10px">תאריך מסירה<input class="din" type="date" value="{{j.pServedISO}}" onChange="{{j.setPServed}}"></label>
+</div>
+<div class="dates">
+<div class="datecard main"><span class="tlabel">ניתן לפתוח תיק הוצל״פ מ־</span><span class="dval">{{j.pEligText}}</span><span class="dsub">{{j.pCountText}}</span></div>
+<div class="datecard"><span class="tlabel">מסירה אישית של הפסיקתא</span><span class="dval">{{j.pServedText}}</span><span style="font-size: 12px; color: #6B7590">{{j.pShiftNote}}</span></div>
+<div class="datecard"><span class="tlabel">תזכורות שנקבעו אוטומטית</span><span style="font-size: 13px; line-height: 1.6">5 ימים לפני · ביום עצמו</span><span class="auto" style="align-self: flex-start">לעו״ד {{j.owner}}</span></div>
+</div>
+</sc-if>
+<sc-if value="{{j.a5}}" hint-placeholder-val="{{ false }}">
+<div class="act hot">
+<span class="sig s-alert"><i></i>חלפו {{j.pDays}} ימים ממסירת הפסיקתא</span>
+<span style="font-size: 13.5px; flex: 1 1 220px">יש לפתוח תיק הוצל״פ.</span>
+<button type="button" class="btn sm red" onClick="{{j.openExec}}">פתח תיק הוצל״פ</button>
+</div>
+<div class="dates">
+<div class="datecard main late"><span class="tlabel">ניתן לפתוח תיק הוצל״פ מ־</span><span class="dval">{{j.pEligText}}</span><span class="dsub">{{j.pCountText}}</span></div>
+<div class="datecard"><span class="tlabel">מסירה אישית של הפסיקתא</span><span class="dval">{{j.pServedText}}</span></div>
+</div>
+</sc-if>
+<sc-if value="{{j.a6}}" hint-placeholder-val="{{ false }}">
+<div class="act">
+<span class="auto">משימה</span>
+<span style="font-size: 13.5px; flex: 1 1 240px">האם הוגשו לקובי המסמכים לתיק ההוצל״פ?</span>
+<button type="button" class="btn sm acc" onClick="{{j.kobiDone}}">כן, הוגשו לקובי</button>
+</div>
+</sc-if>
+<sc-if value="{{j.a7}}" hint-placeholder-val="{{ false }}">
+<div class="act"><span class="sig s-done"><i></i>המסלול הושלם · המסמכים הוגשו לקובי</span></div>
+</sc-if>
+<div style="margin-top: 12px; display: flex; gap: 8px">
+<button type="button" class="btn sm" onClick="{{j.edit}}">עריכת שורה</button>
+<sc-if value="{{j.inTrack}}" hint-placeholder-val="{{ true }}">
+<button type="button" class="btn sm" onClick="{{j.exitDefense}}">הוגש כתב הגנה</button>
+<button type="button" class="btn sm" onClick="{{j.exitInsolv}}" style="color: #A2803F">לקוח בחדל״פ</button>
+</sc-if>
+<sc-if value="{{j.exited}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn sm" onClick="{{j.restore}}">החזרה למסלול</button></sc-if>
+<button type="button" class="btn sm ghost" onClick="{{j.reset}}">איפוס מסלול</button>
+<button type="button" class="btn sm ghost" onClick="{{j.del}}" style="color: #B4474F">מחיקת שורה</button>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{noJudg}}" hint-placeholder-val="{{ false }}"><div style="padding: 34px 18px; text-align: center; color: #8E9CA4; font-size: 14px">אין תיקים בפסקי דין. תביעות בימ״ש עוברות לכאן אוטומטית אחרי הקלדת תאריך מסירה אישית.</div></sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{isWarn}}" hint-placeholder-val="{{ false }}">
+<section class="tile rise" style="padding: 0">
+<div class="th" style="padding: 16px 18px 0; flex-wrap: wrap"><h2>מכתבי התראה במעקב</h2><span class="nbadge">{{warnCount}}</span><span class="law" style="white-space: nowrap">הוצל״פ 30 · בימ״ש 21 · ממועד המסירה</span><span style="font-size: 12.5px; color: #4B5570; flex: 1 1 100%; order: 9">ללא עו״ד מטפלת – אם נחתם הסדר בסניף, התיק לא מגיע לטיפול משפטי</span><button type="button" class="btn sm noprint" onClick="{{print}}" style="margin-right: auto">הדפסת טבלה</button></div>
+<div class="scroll">
+<table>
+<thead><tr><th>שם חייב</th><th>סוג תיק</th><th>שליחה</th><th>מסירה</th><th>ניתן לפתוח מ־</th><th>ספירה</th><th>סטטוס</th><th><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">פעולה</span></th></tr></thead>
+<tbody>
+<sc-for list="{{warns}}" as="w" hint-placeholder-count="6">
+<tr>
+<td style="font-weight: 500">{{w.name}}</td>
+<td><span class="sig s-wait"><i></i>{{w.type}}</span></td>
+<td class="mono" style="font-size: 12.5px">{{w.sent}}</td>
+<td class="mono" style="font-size: 12.5px">{{w.delivered}}</td>
+<td class="mono" style="font-size: 12.5px">{{w.due}}<sc-if value="{{w.shifted}}" hint-placeholder-val="{{ false }}"> <span class="verify">הוזז משבת</span></sc-if></td>
+<td>
+<div style="display: flex; align-items: center; gap: 10px">
+<svg role="img" aria-label="{{w.countText}}" viewBox="0 0 40 40" style="width: 38px; height: 38px; transform: rotate(-90deg)"><circle cx="20" cy="20" r="16" style="fill: none; stroke: #E6EAF2; stroke-width: 4"></circle><circle cx="20" cy="20" r="16" style="{{w.ring}}"></circle></svg>
+<span style="font-size: 12.5px; color: #3B4560; white-space: nowrap">{{w.countText}}</span>
+</div>
+</td>
+<td><span class="{{w.sig}}"><i></i>{{w.status}}</span></td>
+<td class="noprint" style="white-space: nowrap; text-align: left">
+<sc-if value="{{w.canOpen}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn sm red" onClick="{{w.open}}">פתח תיק</button></sc-if>
+<sc-if value="{{w.isOpened}}" hint-placeholder-val="{{ false }}"><button type="button" class="casebtn" onClick="{{w.goCase}}">תיק {{w.caseNum}} ←</button></sc-if>
+<button type="button" class="ib" aria-label="עריכה" onClick="{{w.edit}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16zM14 6l4 4"></path></svg></button><button type="button" class="ib" aria-label="מחיקה" onClick="{{w.del}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"></path></svg></button>
+</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<sc-if value="{{noWarns}}" hint-placeholder-val="{{ false }}"><div style="padding: 34px 18px; text-align: center; color: #8E9CA4; font-size: 14px">אין מכתבי התראה במעקב.</div></sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{isAgr}}" hint-placeholder-val="{{ false }}">
+<div class="bento" style="margin-bottom: 16px">
+<sc-for list="{{agrKpis}}" as="c" hint-placeholder-count="4">
+<div class="tile rise" style="grid-column: span 3; padding: 16px 18px">
+<div class="tlabel">{{c.code}}</div>
+<div class="mono" style="{{c.vStyle}}">{{c.v}}</div>
+<div style="font-size: 13px; color: #3B4560; margin-top: 4px">{{c.label}}</div>
+</div>
+</sc-for>
+</div>
+<div class="noprint" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px">
+<span class="tlabel" style="margin-left: 4px">עו״ד מטפלת</span>
+<sc-for list="{{ownerChips}}" as="o" hint-placeholder-count="7"><button type="button" class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
+<span style="margin-right: auto; font-size: 12.5px; color: #4B5570">{{agrShownText}}</span>
+</div>
+<sc-if value="{{noAgrs}}" hint-placeholder-val="{{ false }}"><div class="tile" style="text-align: center; color: #4B5570; font-size: 14px; padding: 28px">אין הסכמים להצגה בלשונית זו</div></sc-if>
+<div style="display: flex; flex-direction: column; gap: 16px">
+<sc-for list="{{agrs}}" as="g" hint-placeholder-count="3">
+<section class="tile rise" style="padding: 20px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px">
+<button type="button" class="casebtn" onClick="{{g.open360}}">{{g.num}}</button>
+<h2 style="margin: 0; font-size: 18px; font-weight: 700">{{g.name}}</h2>
+<span style="font-size: 13px; color: #4B5570">בטיפול עו״ד {{g.lawyer}}</span>
+<sc-if value="{{g.configured}}" hint-placeholder-val="{{ true }}"><span class="tlabel">{{g.range}}</span></sc-if>
+<span class="{{g.sig}}" style="margin-right: auto"><i></i>{{g.statusText}}</span>
+<button type="button" class="btn sm noprint" onClick="{{g.toggleCfg}}">תשלומים</button><span class="noprint" style="display: inline-flex; gap: 6px"><button type="button" class="ib" aria-label="עריכה" onClick="{{g.edit}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16zM14 6l4 4"></path></svg></button><button type="button" class="ib" aria-label="מחיקה" onClick="{{g.del}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"></path></svg></button></span>
+</div>
+
+<sc-if value="{{g.showCfg}}" hint-placeholder-val="{{ false }}">
+<div class="cfg">
+<div class="tlabel" style="grid-column: 1 / -1; color: #1D4ED8">הגדרת הסכם · החישוב מתעדכן מיד</div>
+<label class="field">סכום החוב (₪)<input type="number" min="0" value="{{g.cfgDebt}}" onChange="{{g.setDebt}}" placeholder="לדוגמה 12000"></label>
+<label class="field">מועד תשלום ראשון<input type="month" value="{{g.cfgFirst}}" onChange="{{g.setFirst}}"></label>
+<label class="field">מועד תשלום אחרון<input type="month" value="{{g.cfgLast}}" onChange="{{g.setLast}}"></label>
+<div class="datecard main" style="animation: none"><span class="tlabel">תשלום חודשי מחושב</span><span class="dval">{{g.cfgPreview}}</span><span class="dsub">{{g.cfgPreviewSub}}</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{g.configured}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px">
+<sc-for list="{{g.stats}}" as="x" hint-placeholder-count="6">
+<div class="{{x.cls}}"><span class="tlabel">{{x.k}}</span><span class="v">{{x.v}}</span></div>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px">
+<div class="bar" style="flex: 1; height: 8px"><div style="{{g.pctW}}"></div></div>
+<span class="mono" style="font-size: 12.5px; color: #3B4560; white-space: nowrap">{{g.pctText}}</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px">
+<sc-for list="{{g.months}}" as="m" hint-placeholder-count="12">
+<button type="button" class="{{m.cls}}" onClick="{{m.click}}" disabled="{{m.locked}}" aria-label="{{m.aria}}">
+<span style="display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 12px">
+<sc-if value="{{m.locked}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4"></path></svg></sc-if>
+<sc-if value="{{m.isOk}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"></path></svg></sc-if>
+<sc-if value="{{m.isBad}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg></sc-if>
+<sc-if value="{{m.isPart}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18zM12 3a9 9 0 0 1 0 18"></path></svg></sc-if>
+{{m.label}}</span>
+<span class="mono" style="font-size: 10.5px; opacity: .7">נדרש {{m.req}}</span>
+<span style="font-size: 12px; font-weight: 600">{{m.paidTxt}}</span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{g.askClose}}" hint-placeholder-val="{{ false }}">
+<div class="act" style="background: linear-gradient(135deg,#E3F2EA,#E2F1F0); border-color: transparent">
+<span class="sig s-done"><i></i>שולם במלואו</span>
+<span style="font-size: 14px; font-weight: 600; flex: 1 1 200px">האם להכין טופס סגירה?</span>
+<button type="button" class="btn sm acc" onClick="{{g.closeYes}}">כן, הכן טופס סגירה</button>
+<button type="button" class="btn sm" onClick="{{g.closeNo}}">לא כעת</button>
+</div>
+</sc-if>
+<sc-if value="{{g.closedAg}}" hint-placeholder-val="{{ false }}">
+<div class="act"><span class="sig s-gold"><i></i>הועבר לסגירות חשבון</span><span style="font-size: 13.5px">נוצרה סגירת חשבון ומשימה "הכנת טופס סגירה".</span></div>
+</sc-if>
+<sc-if value="{{g.editing}}" hint-placeholder-val="{{ false }}">
+<div class="act" style="border-color: #0B1324; box-shadow: 0 14px 30px -20px rgba(10,16,34,.6)">
+<span class="auto">{{g.edLabel}}</span>
+<span style="font-size: 13.5px">נדרש החודש: <b class="mono">{{g.edReq}}</b></span>
+<label class="field" style="flex-direction: row; align-items: center; gap: 8px">כמה הועבר (₪)<input class="din" type="number" min="0" value="{{g.edVal}}" onChange="{{g.edChange}}" style="width: 130px"></label>
+<button type="button" class="btn sm acc" onClick="{{g.edFull}}">שולם במלואו</button>
+<button type="button" class="btn sm" onClick="{{g.edZero}}">לא הועבר</button>
+<button type="button" class="btn sm pri" onClick="{{g.edSave}}">שמירה</button>
+<button type="button" class="btn sm ghost" onClick="{{g.edClose}}">סגירה</button>
+</div>
+</sc-if>
+<sc-if value="{{g.asked}}" hint-placeholder-val="{{ false }}">
+<div class="act"><span class="auto">משימה</span><span style="font-size: 13.5px; flex: 1 1 240px">לשאול את עו״ד {{g.lawyer}} האם להכין מכתב הפרת הסכם</span><button type="button" class="btn sm acc" onClick="{{g.approve}}">עו״ד אישר</button><button type="button" class="btn sm" onClick="{{g.reject}}">לא אישר</button></div>
+</sc-if>
+<sc-if value="{{g.hasLetter}}" hint-placeholder-val="{{ false }}">
+<div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #EEF1F6">
+<div class="tlabel" style="margin-bottom: 12px">מכתב הפרת הסכם</div>
+<div class="track">
+<sc-for list="{{g.steps}}" as="s" hint-placeholder-count="4">
+<button type="button" class="{{s.cls}}" onClick="{{s.set}}" style="background: transparent; border: 0; cursor: pointer; font-family: inherit"><span class="d">{{s.n}}</span><span>{{s.label}}</span></button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</sc-if>
+</section>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isCases}}" hint-placeholder-val="{{ false }}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px">
+<sc-for list="{{caseKpis}}" as="c" hint-placeholder-count="7">
+<button type="button" class="{{c.cls}}" onClick="{{c.pick}}" style="padding: 16px">
+<span class="sweep" aria-hidden="true"></span>
+<span class="{{c.sig}}"><i></i>{{c.label}}</span>
+<span class="big" style="display: block; margin-top: 14px; font-size: 34px">{{c.n}}</span>
+</button>
+</sc-for>
+</div>
+<section class="tile rise" style="padding: 0">
+<div class="th" style="padding: 16px 18px 0; flex-wrap: wrap">
+<h2>כל התיקים</h2><span class="nbadge">{{caseCount}}</span>
+<span class="auto">ניתוב אוטומטי</span>
+<span style="font-size: 12.5px; color: #4B5570">תביעה ← טבלת תביעות · הסכם ← טבלת הסכמים</span>
+<button type="button" class="btn sm noprint" onClick="{{print}}" style="margin-right: auto">הדפסת טבלה</button>
+</div>
+<div class="scroll">
+<table>
+<thead><tr><th>מספר תיק</th><th>שם תיק</th><th>עו״ד מטפלת</th><th>מסלול</th><th>סטטוס עדכני · אוטומטי</th><th>נמצא ב־</th><th>נפתח</th><th><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">פעולות</span></th></tr></thead>
+<tbody>
+<sc-for list="{{caseRows}}" as="c" hint-placeholder-count="8">
+<tr>
+<td><button type="button" class="casebtn" onClick="{{c.open360}}">{{c.num}}</button></td>
+<td style="font-weight: 500">{{c.name}} <sc-if value="{{c.fromWarn}}" hint-placeholder-val="{{ false }}"><span class="auto">מהתראה</span></sc-if></td>
+<td>
+<label><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">עו״ד מטפלת</span>
+<select class="{{c.ownerCls}}" value="{{c.owner}}" onChange="{{c.setOwner}}">
+<sc-for list="{{ownerOpts}}" as="o" hint-placeholder-count="7"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+</select></label>
+</td>
+<td>
+<label><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">סטטוס</span>
+<select class="{{c.selCls}}" value="{{c.status}}" onChange="{{c.setStatus}}">
+<sc-for list="{{caseStatuses}}" as="o" hint-placeholder-count="6"><option value="{{o}}">{{o}}</option></sc-for>
+</select></label>
+</td>
+<td>
+<span class="{{c.liveSig}}"><i></i>{{c.liveText}}</span>
+<div style="display: flex; align-items: center; gap: 6px; margin-top: 5px; font-size: 11px; color: #6B7590"><span class="live" style="width: 6px; height: 6px"></span>מתעדכן מ{{c.liveSrc}}</div>
+</td>
+<td>
+<sc-if value="{{c.hasLink}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn sm" onClick="{{c.goLink}}">{{c.linkLabel}} ←</button></sc-if>
+<sc-if value="{{c.noLink}}" hint-placeholder-val="{{ true }}"><span style="font-size: 12.5px; color: #8A93A8">טבלת תיקים בלבד</span></sc-if>
+</td>
+<td class="mono" style="font-size: 12.5px; color: #4B5570">{{c.openedTxt}}</td>
+<td class="noprint" style="white-space: nowrap; text-align: left">
+<button type="button" class="ib" aria-label="עריכה" onClick="{{c.edit}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16zM14 6l4 4"></path></svg></button><button type="button" class="ib" aria-label="מחיקה" onClick="{{c.del}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"></path></svg></button>
+</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<sc-if value="{{noCases}}" hint-placeholder-val="{{ false }}"><div style="padding: 34px 18px; text-align: center; color: #8E9CA4; font-size: 14px">אין תיקים עדיין. תיקים נוספים כאן כשפותחים תיק ממכתב התראה, או ידנית.</div></sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{isRules}}" hint-placeholder-val="{{ false }}">
+<div class="tile" style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center; background: linear-gradient(145deg,#E2EDF5,#E2F1F0); color: #1E2A33; border: 0">
+<span class="auto">מנוע</span>
+<span style="font-size: 13.5px; flex: 1">המנוע סורק את כל הטבלאות בכל טעינה ובכל שינוי. הוא מזהה, מחשב מועדים ומציע. פתיחת תיק ומעבר שלב נשארים בהחלטה שלך.</span>
+</div>
+<div class="bento">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="12">
+<section class="tile" style="grid-column: span 6; padding: 16px 18px">
+<div style="display: flex; align-items: flex-start; gap: 12px">
+<div style="flex: 1; min-width: 0">
+<div class="tlabel">{{r.code}}</div>
+<div style="font-size: 15px; font-weight: 600; margin-top: 4px">{{r.title}}</div>
+<div style="font-size: 13.5px; color: #3B4560; margin-top: 6px; line-height: 1.55">{{r.text}}</div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px"><span class="law">{{r.src}}</span><sc-if value="{{r.verify}}" hint-placeholder-val="{{ false }}"><span class="verify">לאימות משפטי</span></sc-if></div>
+</div>
+<button type="button" class="{{r.swCls}}" onClick="{{r.toggle}}" aria-label="{{r.aria}}" aria-pressed="{{r.on}}"></button>
+</div>
+</section>
+</sc-for>
+</div>
+<p style="font-size: 12.5px; color: #6B7590; margin-top: 16px">הפניות לסעיפים מוצגות לעזרה בלבד. יש לאמת כל כלל המסומן "לאימות משפטי" מול עו״ד לפני הפעלה.</p>
+</sc-if>
+</main>
+<nav class="bnav noprint" aria-label="ניווט תחתון">
+<sc-for list="{{bnav}}" as="n" hint-placeholder-count="6">
+<button type="button" class="{{n.cls}}" onClick="{{n.go}}"><sc-if value="{{n.hot}}" hint-placeholder-val="{{ false }}"><span class="dotb" aria-hidden="true"></span></sc-if><svg aria-hidden="true" viewBox="0 0 24 24"><path d="{{n.d}}"></path></svg><span>{{n.label}}</span></button>
+</sc-for>
+</nav>
+<sc-if value="{{showMore}}" hint-placeholder-val="{{ false }}">
+<div class="overlay" onClick="{{closeMore}}"></div>
+<div class="drawer" role="dialog" aria-modal="true" aria-label="כל העמודים">
+<h2 style="margin: 0 0 14px; font-size: 20px">כל העמודים</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{moreItems}}" as="n" hint-placeholder-count="10">
+<button type="button" class="{{n.cls}}" onClick="{{n.go}}" style="border: 1px solid #E2E8EB"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="{{n.d}}"></path></svg><span>{{n.label}}</span><sc-if value="{{n.hasBadge}}" hint-placeholder-val="{{ false }}"><span class="{{n.badgeCls}}">{{n.badge}}</span></sc-if></button>
+</sc-for>
+</div>
+<div class="note" style="margin-top: 14px; background: #F5F7F8">הנתונים נשמרים בדפדפן של מכשיר זה.<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px">
+<button type="button" class="btn sm" onClick="{{exportData}}">ייצוא גיבוי</button>
+<label class="btn sm" style="cursor: pointer">ייבוא נתונים<input type="file" accept=".json,application/json" onChange="{{importData}}" style="position: absolute; width: 1px; height: 1px; opacity: 0"></label>
+</div></div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasOpenCase}}" hint-placeholder-val="{{ false }}">
+<div class="overlay" role="dialog" aria-modal="true" aria-label="פתיחת תיק">
+<div class="modal" style="border-top-color: #1D4ED8; width: min(500px, 100%)">
+<div class="tlabel">OPEN CASE · מכתב התראה</div>
+<h2 style="margin: 8px 0 4px; font-size: 20px; font-weight: 600">פתיחת תיק · {{oc.name}}</h2>
+<p style="margin: 0 0 18px; font-size: 13px; color: #4B5570">{{oc.sub}}</p>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px">
+<label class="field">מספר תיק חדש<input type="text" inputmode="numeric" value="{{oc.num}}" onChange="{{oc.setNum}}" style="font-variant-numeric: tabular-nums"></label>
+<label class="field">עו״ד מטפלת<select class="{{oc.ownerCls}}" value="{{oc.owner}}" onChange="{{oc.setOwner}}" style="min-height: 38px"><sc-for list="{{ownerOpts}}" as="o" hint-placeholder-count="7"><option value="{{o.v}}">{{o.label}}</option></sc-for></select></label>
+</div>
+<sc-if value="{{oc.err}}" hint-placeholder-val="{{ false }}"><div class="act hot" style="margin-top: 12px; font-size: 13px">{{oc.errText}}</div></sc-if>
+<div style="margin-top: 16px; padding: 12px 14px; border: 1px solid #E1E5EC; border-radius: 6px; background: #F8F9FB; font-size: 12.5px; color: #334155; line-height: 1.6">
+<span class="tlabel" style="display: block; margin-bottom: 4px">מה יקרה</span>התיק יירשם בטבלת תיקים עם מספר התיק והעו״ד שבחרת, בסטטוס "חדש – ממתין למסלול". שם בוחרים מו״מ, הסכם, חדלות פירעון או תביעה.
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px">
+<button type="button" class="btn acc" onClick="{{oc.confirm}}">פתח תיק ושלח לטבלת תיקים</button>
+<button type="button" class="btn" onClick="{{oc.cancel}}">ביטול</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasDialog}}" hint-placeholder-val="{{ false }}">
+<div class="overlay" role="dialog" aria-modal="true" aria-label="הפרת הסכם">
+<div class="modal">
+<span class="sig s-alert"><i></i>הפרה נרשמה</span>
+<h2 style="margin: 14px 0 8px; font-size: 19px; font-weight: 700">{{dlg.name}} · {{dlg.month}}</h2>
+<p style="margin: 0 0 20px; font-size: 14.5px; color: #3B4560; line-height: 1.6">לפתוח משימה לשאול את עו״ד {{dlg.lawyer}} האם להכין מכתב הפרת הסכם?</p>
+<div style="display: flex; gap: 10px; flex-wrap: wrap"><button type="button" class="btn acc" onClick="{{dlgYes}}">כן, צור משימה</button><button type="button" class="btn" onClick="{{dlgNo}}">לא כעת</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasEdit}}" hint-placeholder-val="{{ false }}">
+<div class="overlay" style="padding: 0" onClick="{{closeEdit}}"></div>
+<div class="drawer" role="dialog" aria-modal="true" aria-label="עריכה">
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px"><div><div class="tlabel">EDIT</div><h2 style="margin: 2px 0 0; font-size: 19px; font-weight: 700">עריכת {{ed.kind}}</h2></div><button type="button" class="ib" aria-label="סגירה" onClick="{{closeEdit}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+<div style="display: flex; flex-direction: column; gap: 14px">
+<label class="field">מספר תיק<input type="text" value="{{ed.num}}" onChange="{{edNum}}"></label>
+<label class="field">שם<input type="text" value="{{ed.name}}" onChange="{{edName}}"></label>
+<sc-if value="{{ed.hasOwner}}" hint-placeholder-val="{{ true }}">
+<label class="field">{{ed.ownerLabel}}<select value="{{ed.owner}}" onChange="{{edOwner}}"><sc-for list="{{ownerOpts}}" as="o" hint-placeholder-count="7"><option value="{{o.v}}">{{o.label}}</option></sc-for></select></label>
+</sc-if>
+<sc-if value="{{ed.hasStatus}}" hint-placeholder-val="{{ true }}">
+<label class="field">סטטוס<select value="{{ed.status}}" onChange="{{edStatus}}"><sc-for list="{{ed.statuses}}" as="o" hint-placeholder-count="6"><option value="{{o}}">{{o}}</option></sc-for></select></label>
+</sc-if>
+<sc-if value="{{ed.hasType}}" hint-placeholder-val="{{ false }}">
+<label class="field">סוג תיק<select value="{{ed.type}}" onChange="{{edType}}"><sc-for list="{{ed.types}}" as="o" hint-placeholder-count="2"><option value="{{o}}">{{o}}</option></sc-for></select></label>
+</sc-if>
+<sc-if value="{{ed.hasDesc}}" hint-placeholder-val="{{ false }}">
+<label class="field">תיאור המשימה<textarea rows="2" value="{{ed.desc}}" onChange="{{edDesc}}"></textarea></label>
+</sc-if>
+<sc-if value="{{ed.hasD1}}" hint-placeholder-val="{{ false }}">
+<label class="field">{{ed.d1Label}}<input type="date" value="{{ed.d1}}" onChange="{{edD1}}"></label>
+</sc-if>
+<sc-if value="{{ed.hasD2}}" hint-placeholder-val="{{ false }}">
+<label class="field">{{ed.d2Label}}<input type="date" value="{{ed.d2}}" onChange="{{edD2}}"></label>
+</sc-if>
+<label class="field">הערות<textarea rows="3" value="{{ed.note}}" onChange="{{edNote}}"></textarea></label>
+</div>
+<div style="display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap"><button type="button" class="btn acc" onClick="{{saveEdit}}">שמירה</button><button type="button" class="btn" onClick="{{closeEdit}}">ביטול</button><sc-if value="{{ed.canDel}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn ghost" onClick="{{delEdit}}" style="margin-right: auto; color: #B4474F">מחיקת השורה</button></sc-if></div>
+</div>
+</sc-if>
+
+<sc-if value="{{has360}}" hint-placeholder-val="{{ false }}">
+<div class="overlay" style="padding: 0" onClick="{{close360}}"></div>
+<div class="drawer" role="dialog" aria-modal="true" aria-label="תיק 360">
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px"><div><div class="tlabel">CASE 360°</div><h2 style="margin: 2px 0 0; font-size: 20px; font-weight: 700" class="mono">{{c360.num}}</h2></div><button type="button" class="ib" aria-label="סגירה" onClick="{{close360}}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+<p style="font-size: 13px; color: #4B5570; margin: 0 0 14px">כל מה שקשור לתיק, מכל הטבלאות</p>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{c360.items}}" as="i" hint-placeholder-count="3">
+<div style="padding: 12px 14px; border-radius: 18px; border: 0; background: #F5F7F8">
+<div class="tlabel">{{i.kind}}</div>
+<div style="font-size: 14px; font-weight: 500; margin: 4px 0 8px">{{i.name}}</div>
+<span class="{{i.sig}}"><i></i>{{i.status}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}"><div class="toast" role="status"><span class="live" style="background: #7FD3CF"></span>{{toast}}<sc-if value="{{hasUndo}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{doUndo}}" style="margin-right: 6px; border: 0; background: rgba(255,255,255,.16); color: #fff; border-radius: 999px; padding: 4px 12px; font-weight: 600; cursor: pointer">ביטול</button></sc-if></div></sc-if>
+
+<sc-if value="{{showReport}}" hint-placeholder-val="{{ false }}">
+<div class="report">
+<div class="rep-head"><div><div class="rep-title">דוח בדיקות מרוכז</div><div class="rep-sub">כל מה שממתין לבדיקה · לפי אחראית ונושא</div></div><div class="rep-date">{{reportDate}}<br>סה״כ {{reportTotal}} פריטים</div></div>
+<sc-if value="{{noReport}}" hint-placeholder-val="{{ false }}"><p>אין כרגע פריטים בבדיקה.</p></sc-if>
+<div class="rep-grid">
+<sc-for list="{{reportGroups}}" as="g" hint-placeholder-count="3">
+<div class="rep-person">
+<div class="rep-name">{{g.name}} <span>· {{g.count}}</span></div>
+<sc-for list="{{g.sections}}" as="x" hint-placeholder-count="2">
+<div class="rep-sec">{{x.title}}</div>
+<table class="rep-tbl"><tbody>
+<sc-for list="{{x.rows}}" as="r" hint-placeholder-count="3"><tr><td class="n">{{r.num}}</td><td>{{r.name}}</td><td class="e">{{r.extra}}</td></tr></sc-for>
+</tbody></table>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</script>
+<script src="vendor/preact.umd.js"></script>
+<script src="runtime.js"></script>
+<script src="app.js"></script>
+<script>bootApp(Component);</script>
+</body>
+</html>
