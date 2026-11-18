@@ -201,6 +201,15 @@ tbody tr:hover{background:linear-gradient(270deg,rgba(30,90,132,.05),transparent
 @media print{.noprint,.bnav{display:none!important}.tile{box-shadow:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
+
+/* judgments rows on phones: stack into two columns instead of overflowing */
+@media (max-width:700px){
+  .jrow{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;padding:14px 16px}
+  .jrow[style*="cursor: default"]{display:none}
+  .jrow>span:last-child{display:none}
+  .jpanel .dates{grid-template-columns:minmax(0,1fr)}
+  .act .field{flex-wrap:wrap}
+}
 /* cloud sync & login */
 .syncdot{width:8px;height:8px;border-radius:50%;background:#8E9CA4;flex-shrink:0;display:inline-block}
 .syncdot.synced{background:#1C8582;box-shadow:0 0 0 3px rgba(28,133,130,.15)}
