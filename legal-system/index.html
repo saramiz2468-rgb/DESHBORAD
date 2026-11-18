@@ -13,6 +13,29 @@
 <div id="app"></div>
 <noscript>יש להפעיל JavaScript כדי להשתמש במערכת.</noscript>
 <script type="text/x-dc-template" id="tpl">
+<sc-if value="{{sync.needLogin}}" hint-placeholder-val="{{ false }}">
+<div class="lock" dir="rtl">
+<div class="lockcard">
+<div style="width: 56px; height: 56px; border-radius: 18px; background: linear-gradient(145deg,#E2EDF5,#E2F1F0); display: grid; place-items: center; margin: 0 auto 14px">
+<svg aria-hidden="true" viewBox="0 0 24 24" style="width: 26px; height: 26px; fill: none; stroke: #1E5A84; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round"><path d="M12 3v18M5 7h14M7 7l-3 7a3 3 0 0 0 6 0zM17 7l-3 7a3 3 0 0 0 6 0zM8 21h8"></path></svg>
+</div>
+<div class="brandw" style="text-align: center">LEXOPS</div>
+<h1 style="margin: 6px 0 4px; font-size: 22px; font-weight: 600; text-align: center; color: #1E2A33">מערכת ניהול תיקים</h1>
+<p style="margin: 0 0 20px; font-size: 14px; color: #5B6B75; text-align: center">כניסה לצוות המשרד</p>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<label class="field">מייל<input id="ls-email" type="email" autocomplete="username" dir="ltr" inputmode="email"></label>
+<label class="field">סיסמה<input id="ls-pass" type="password" autocomplete="current-password" dir="ltr" onKeyDown="{{sync.onKey}}"></label>
+<sc-if value="{{sync.hasError}}" hint-placeholder-val="{{ false }}"><div class="act hot" style="margin-top: 0; font-size: 13.5px">{{sync.error}}</div></sc-if>
+<button type="button" class="btn acc" style="width: 100%; min-height: 48px; margin-top: 4px" onClick="{{sync.login}}" disabled="{{sync.busy}}">כניסה</button>
+</div>
+<p style="margin: 16px 0 0; font-size: 12.5px; color: #8E9CA4; text-align: center">אין לך משתמש? יש לבקש ממנהלת המערכת.</p>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{sync.loading}}" hint-placeholder-val="{{ false }}">
+<div class="lock" dir="rtl"><div class="lockcard" style="text-align: center; font-size: 15px; color: #1E2A33"><span class="live" style="display: inline-block; margin-left: 8px"></span>טוען נתונים מהענן…</div></div>
+</sc-if>
+<sc-if value="{{sync.showApp}}" hint-placeholder-val="{{ true }}">
 <div dir="rtl" class="{{rootCls}}" style="min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'SF Hebrew', 'Segoe UI', 'Heebo', 'Assistant', Arial, sans-serif; color: #1E2A33; background-color: #F3F6F8; background-image: radial-gradient(1100px 480px at 85% -12%, rgba(30,90,132,.10), transparent 60%), radial-gradient(900px 420px at 0% -6%, rgba(28,133,130,.09), transparent 60%); display: flex; position: relative">
 
 <aside class="sidebar noprint">
@@ -43,7 +66,10 @@
 <div class="note" style="margin-top: auto">
 <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #1E2A33"><span class="live"></span>מנוע אוטומציה פעיל</div>
 <div style="margin-top: 4px">{{rulesOn}} כללים · {{autoToday}} פעולות היום</div>
-<div style="font-size: 12px; margin-top: 8px">הנתונים נשמרים בדפדפן של מחשב זה. מומלץ לייצא גיבוי מדי פעם.</div>
+<div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12.5px; color: #1E2A33"><span class="{{sync.dotCls}}"></span>{{sync.label}}</div>
+<sc-if value="{{sync.cloud}}" hint-placeholder-val="{{ false }}"><div style="font-size: 12px; margin-top: 4px; direction: rtl">{{sync.email}} · <button type="button" class="linkbtn" onClick="{{sync.logout}}">יציאה</button></div></sc-if>
+<sc-if value="{{sync.local}}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; margin-top: 6px">הנתונים נשמרים בדפדפן של מכשיר זה. מומלץ לייצא גיבוי מדי פעם.</div></sc-if>
+<sc-if value="{{sync.hasError}}" hint-placeholder-val="{{ false }}"><div style="font-size: 11.5px; color: #B4474F; margin-top: 4px">{{sync.error}}</div></sc-if>
 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px">
 <button type="button" class="btn sm" onClick="{{exportData}}">ייצוא גיבוי</button>
 <label class="btn sm" style="cursor: pointer">ייבוא נתונים<input type="file" accept=".json,application/json" onChange="{{importData}}" style="position: absolute; width: 1px; height: 1px; opacity: 0"></label>
@@ -54,6 +80,7 @@
 <main class="main">
 <div class="noprint" style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; height: auto; padding: 0 0 4px; margin-bottom: 18px; font-size: 12px; color: #4B5570">
 <span class="mono" style="display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px"><span class="live"></span>{{todayLabel}}</span>
+<span class="tm"><span class="{{sync.dotCls}}"></span><span class="tk">{{sync.label}}</span></span>
 <div class="telem">
 <sc-for list="{{telem}}" as="t" hint-placeholder-count="5"><span class="tm"><span class="tk">{{t.k}}</span><span class="tv">{{t.v}}</span></span></sc-for>
 </div>
@@ -699,7 +726,11 @@
 <button type="button" class="{{n.cls}}" onClick="{{n.go}}" style="border: 1px solid #E2E8EB"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="{{n.d}}"></path></svg><span>{{n.label}}</span><sc-if value="{{n.hasBadge}}" hint-placeholder-val="{{ false }}"><span class="{{n.badgeCls}}">{{n.badge}}</span></sc-if></button>
 </sc-for>
 </div>
-<div class="note" style="margin-top: 14px; background: #F5F7F8">הנתונים נשמרים בדפדפן של מכשיר זה.<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px">
+<div class="note" style="margin-top: 14px; background: #F5F7F8"><div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12.5px; color: #1E2A33"><span class="{{sync.dotCls}}"></span>{{sync.label}}</div>
+<sc-if value="{{sync.cloud}}" hint-placeholder-val="{{ false }}"><div style="font-size: 12px; margin-top: 4px; direction: rtl">{{sync.email}} · <button type="button" class="linkbtn" onClick="{{sync.logout}}">יציאה</button></div></sc-if>
+<sc-if value="{{sync.local}}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; margin-top: 6px">הנתונים נשמרים בדפדפן של מכשיר זה. מומלץ לייצא גיבוי מדי פעם.</div></sc-if>
+<sc-if value="{{sync.hasError}}" hint-placeholder-val="{{ false }}"><div style="font-size: 11.5px; color: #B4474F; margin-top: 4px">{{sync.error}}</div></sc-if>
+<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px">
 <button type="button" class="btn sm" onClick="{{exportData}}">ייצוא גיבוי</button>
 <label class="btn sm" style="cursor: pointer">ייבוא נתונים<input type="file" accept=".json,application/json" onChange="{{importData}}" style="position: absolute; width: 1px; height: 1px; opacity: 0"></label>
 </div></div>
@@ -809,8 +840,11 @@
 </div>
 </sc-if>
 </div>
+</sc-if>
 </script>
 <script src="vendor/preact.umd.js"></script>
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
 <script src="runtime.js"></script>
 <script src="app.js"></script>
 <script>bootApp(Component);</script>
