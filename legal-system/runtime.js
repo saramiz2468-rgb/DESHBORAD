@@ -149,16 +149,34 @@
     }, 150);
   }
 
-  /* ---------------- cloud sync ---------------- */
+  /* ---------------- cloud sync (office code) ---------------- */
   var cfg = window.LS_CONFIG || {};
   var cloud = !!(cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase);
-  var client = null, channel = null;
-  var sync = { status: cloud ? 'connecting' : 'local', email: '', error: '', ready: !cloud, needLogin: false, busy: false };
+  var CODE_KEY = 'legal-system-office-code';
+  var client = null, channel = null, pollTimer = null;
+  var sync = { status: cloud ? 'connecting' : 'local', email: '', error: '', ready: !cloud, needLogin: false, busy: false, copied: false };
   var base = {};            // last state known to be in the cloud, per key
   var pushTimer = null, pushing = false, pushAgain = false;
+  var officeCode = '';
 
   function setSync(p) { Object.assign(sync, p); schedule(); }
-
+  function readCode() {
+    var m = (location.hash || '').match(/[#&]k=([^&]+)/);
+    if (m) { var c = decodeURIComponent(m[1]); try { localStorage.setItem(CODE_KEY, c); } catch (e) {} return c; }
+    try { return localStorage.getItem(CODE_KEY) || ''; } catch (e) { return ''; }
+  }
+  function roomName(text) {
+    // short non-secret fingerprint of the office code, used only to pick the live-update channel
+    var h1 = 0x811c9dc5, h2 = 0x01000193;
+    for (var i = 0; i < text.length; i++) { var c = text.charCodeAt(i); h1 = Math.imul(h1 ^ c, 16777619) >>> 0; h2 = Math.imul(h2 ^ c, 2246822519) >>> 0; }
+    return 'ls-' + h1.toString(16) + h2.toString(16);
+  }
+  function makeClient(code) {
+    return window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { 'x-office-key': code } }
+    });
+  }
   async function pullAll() {
     var r = await client.from(TABLE).select('key,value');
     if (r.error) throw r.error;
@@ -166,44 +184,57 @@
     (r.data || []).forEach(function (row) { remote[row.key] = row.value; });
     return remote;
   }
-  async function afterLogin(session) {
-    sync.email = (session && session.user && session.user.email) || '';
-    setSync({ needLogin: false, status: 'connecting', error: '' });
+  function applyRemote(k, remote) {
+    if (J(remote) === J(base[k])) return;
+    var local = inst.state[k];
+    var next = merge(base[k], local, remote);
+    base[k] = clone(remote);
+    if (J(next) !== J(local)) { var p = {}; p[k] = next; inst.state = Object.assign({}, inst.state, p); schedule(); }
+    if (J(next) !== J(remote)) queuePush(400);
+  }
+  async function connect(code) {
+    setSync({ needLogin: false, status: 'connecting', error: '', busy: true });
     try {
-      var remote = await pullAll();
-      var local = syncable(inst.state);
-      var patch = {};
-      if (!Object.keys(remote).length) {
-        // first device to connect: upload what this device already has
-        base = {};
-      } else {
-        Object.keys(remote).forEach(function (k) { patch[k] = remote[k]; base[k] = clone(remote[k]); });
-        // keys that exist only locally will be uploaded on the next push
-        Object.keys(local).forEach(function (k) { if (!(k in remote)) delete base[k]; });
+      client = makeClient(code);
+      var ok = await client.rpc('office_check');
+      if (ok.error) throw ok.error;
+      if (ok.data !== true) {
+        try { localStorage.removeItem(CODE_KEY); } catch (e) {}
+        setSync({ needLogin: true, ready: false, busy: false, error: 'הקוד לא נכון. יש לבקש את קישור המשרד מחדש.' });
+        return;
       }
+      officeCode = code;
+      try { localStorage.setItem(CODE_KEY, code); } catch (e) {}
+      var remote = await pullAll();
+      var local = syncable(inst.state), patch = {};
+      Object.keys(remote).forEach(function (k) { patch[k] = remote[k]; base[k] = clone(remote[k]); });
+      Object.keys(local).forEach(function (k) { if (!(k in remote)) delete base[k]; });
       inst.state = Object.assign({}, inst.state, patch);
-      subscribe();
-      setSync({ ready: true, status: 'synced' });
+      await subscribe(code);
+      clearInterval(pollTimer);
+      pollTimer = setInterval(function () { if (!pushing && document.visibilityState !== 'hidden') refresh(); }, 30000);
+      setSync({ ready: true, status: 'synced', busy: false });
       queuePush(0);
     } catch (e) {
-      setSync({ ready: true, status: 'error', error: String(e.message || e) });
+      setSync({ ready: true, status: 'error', busy: false, error: 'אין חיבור לענן: ' + String(e.message || e) });
+      setTimeout(function () { if (sync.status === 'error') connect(code); }, 8000);
     }
   }
-  function subscribe() {
+  async function refresh() {
+    try { var remote = await pullAll(); Object.keys(remote).forEach(function (k) { applyRemote(k, remote[k]); }); if (sync.status === 'error') setSync({ status: 'synced', error: '' }); }
+    catch (e) { setSync({ status: 'error', error: 'אין חיבור לענן' }); }
+  }
+  async function subscribe(code) {
     if (channel) client.removeChannel(channel);
-    channel = client.channel('app-kv-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, function (payload) {
-        var row = payload.new;
-        if (!row || !row.key) return;
-        var k = row.key, remote = row.value;
-        if (J(remote) === J(base[k])) return;
-        var local = inst.state[k];
-        var next = merge(base[k], local, remote);
-        base[k] = clone(remote);
-        if (J(next) !== J(local)) { var p = {}; p[k] = next; inst.state = Object.assign({}, inst.state, p); schedule(); }
-        if (J(next) !== J(remote)) queuePush(400);
+    var room = roomName(code);
+    channel = client.channel(room, { config: { broadcast: { self: false } } })
+      .on('broadcast', { event: 'changed' }, async function (msg) {
+        var k = msg && msg.payload && msg.payload.key;
+        if (!k) return;
+        var r = await client.from(TABLE).select('value').eq('key', k).maybeSingle();
+        if (!r.error && r.data) applyRemote(k, r.data.value);
       })
-      .subscribe(function (st) { if (st === 'SUBSCRIBED' && sync.status === 'connecting') setSync({ status: 'synced' }); });
+      .subscribe();
   }
   function dirtyKeys() {
     var cur = syncable(inst.state), out = [];
@@ -211,11 +242,12 @@
     return out;
   }
   function queuePush(delay) {
-    if (!cloud || !sync.ready || sync.needLogin) return;
+    if (!cloud || !sync.ready || sync.needLogin || !officeCode) return;
     clearTimeout(pushTimer);
     pushTimer = setTimeout(pushNow, delay == null ? 600 : delay);
   }
   async function pushNow() {
+    if (!client || !officeCode) return;
     if (pushing) { pushAgain = true; return; }
     var keys = dirtyKeys();
     if (!keys.length) { if (sync.status === 'saving') setSync({ status: 'synced' }); return; }
@@ -227,52 +259,58 @@
         var r = await client.from(TABLE).select('value').eq('key', k).maybeSingle();
         if (r.error) throw r.error;
         var remote = r.data ? r.data.value : undefined;
-        var local = inst.state[k];
-        var merged = merge(base[k], local, remote);
-        var w = await client.from(TABLE).upsert({ key: k, value: merged, updated_by: sync.email, updated_at: new Date().toISOString() });
+        var merged = merge(base[k], inst.state[k], remote);
+        var w = await client.from(TABLE).upsert({ key: k, value: merged, updated_at: new Date().toISOString() });
         if (w.error) throw w.error;
         base[k] = clone(merged);
         if (J(merged) !== J(inst.state[k])) { var p = {}; p[k] = merged; inst.state = Object.assign({}, inst.state, p); }
+        if (channel) channel.send({ type: 'broadcast', event: 'changed', payload: { key: k } });
       }
       pushing = false;
       setSync({ status: 'synced', error: '' });
       if (pushAgain || dirtyKeys().length) { pushAgain = false; queuePush(200); }
     } catch (e) {
       pushing = false;
-      setSync({ status: 'error', error: String(e.message || e) });
+      setSync({ status: 'error', error: 'השמירה בענן נכשלה, מנסה שוב…' });
       queuePush(5000);
     }
   }
-  async function login() {
-    var em = (document.getElementById('ls-email') || {}).value || '';
-    var pw = (document.getElementById('ls-pass') || {}).value || '';
-    if (!em || !pw) { setSync({ error: 'יש להזין מייל וסיסמה' }); return; }
-    setSync({ busy: true, error: '' });
-    var r = await client.auth.signInWithPassword({ email: em.trim(), password: pw });
-    if (r.error) { setSync({ busy: false, error: 'המייל או הסיסמה שגויים' }); return; }
-    setSync({ busy: false });
-    afterLogin(r.data.session);
+  function login() {
+    var c = ((document.getElementById('ls-code') || {}).value || '').trim();
+    var m = c.match(/[#&]k=([^&\s]+)/);
+    if (m) c = decodeURIComponent(m[1]);
+    if (!c) { setSync({ error: 'יש להדביק את קישור המשרד או את הקוד' }); return; }
+    connect(c);
   }
   async function logout() {
     await pushNow();
-    if (channel) client.removeChannel(channel);
-    channel = null;
-    await client.auth.signOut();
-    base = {};
-    setSync({ needLogin: true, ready: false, email: '', status: 'connecting' });
+    if (channel && client) client.removeChannel(channel);
+    channel = null; clearInterval(pollTimer);
+    try { localStorage.removeItem(CODE_KEY); } catch (e) {}
+    officeCode = ''; base = {};
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    setSync({ needLogin: true, ready: false, status: 'connecting', error: '' });
   }
-  window.addEventListener('online', function () { queuePush(300); });
+  function shareLink() { return location.origin + location.pathname + '#k=' + encodeURIComponent(officeCode); }
+  async function copyLink() {
+    var link = shareLink();
+    try { await navigator.clipboard.writeText(link); setSync({ copied: true }); setTimeout(function () { setSync({ copied: false }); }, 2500); }
+    catch (e) { window.prompt('העתיקי את הקישור:', link); }
+  }
+  window.addEventListener('online', function () { if (officeCode) { refresh(); queuePush(300); } });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && officeCode && sync.ready) refresh(); });
   window.addEventListener('beforeunload', function (e) {
-    if (cloud && sync.ready && dirtyKeys().length) { pushNow(); e.preventDefault(); e.returnValue = ''; }
+    if (cloud && sync.ready && officeCode && dirtyKeys().length) { pushNow(); e.preventDefault(); e.returnValue = ''; }
   });
 
   function syncVals() {
-    var label = { local: 'שמירה במכשיר זה', connecting: 'מתחבר…', saving: 'שומר בענן…', synced: 'מסונכרן בענן', error: 'אין חיבור לענן' }[sync.status];
+    var label = { local: 'שמירה במכשיר זה', connecting: 'מתחבר…', saving: 'שומר בענן…', synced: 'מסונכרן עם כל הצוות', error: 'אין חיבור לענן' }[sync.status];
     return {
       cloud: cloud, local: !cloud, ready: sync.ready, needLogin: sync.needLogin, showApp: sync.ready && !sync.needLogin,
       loading: cloud && !sync.ready && !sync.needLogin,
-      status: sync.status, label: label, email: sync.email, error: sync.error, hasError: !!sync.error, busy: sync.busy,
-      dotCls: 'syncdot ' + sync.status, login: login, logout: logout,
+      status: sync.status, label: label, email: '', error: sync.error, hasError: !!sync.error, busy: sync.busy,
+      dotCls: 'syncdot ' + sync.status, login: login, logout: logout, copyLink: copyLink,
+      copyLabel: sync.copied ? 'הקישור הועתק ✓' : 'העתקת קישור לצוות',
       onKey: function (e) { if (e.key === 'Enter') login(); }
     };
   }
@@ -311,12 +349,8 @@
     var cached = loadCache();
     if (cached) inst.state = Object.assign({}, inst.state, cached);
     if (cloud) {
-      client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true } });
-      client.auth.getSession().then(function (r) {
-        var session = r && r.data && r.data.session;
-        if (session) afterLogin(session); else setSync({ needLogin: true });
-      }).catch(function () { setSync({ needLogin: true }); });
-      client.auth.onAuthStateChange(function (ev) { if (ev === 'SIGNED_OUT') setSync({ needLogin: true, ready: false }); });
+      var code = readCode();
+      if (code) connect(code); else sync.needLogin = true;
     }
     paint();
     if (inst.componentDidMount) inst.componentDidMount();

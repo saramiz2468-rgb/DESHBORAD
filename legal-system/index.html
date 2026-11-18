@@ -21,14 +21,13 @@
 </div>
 <div class="brandw" style="text-align: center">LEXOPS</div>
 <h1 style="margin: 6px 0 4px; font-size: 22px; font-weight: 600; text-align: center; color: #1E2A33">מערכת ניהול תיקים</h1>
-<p style="margin: 0 0 20px; font-size: 14px; color: #5B6B75; text-align: center">כניסה לצוות המשרד</p>
+<p style="margin: 0 0 20px; font-size: 14px; color: #5B6B75; text-align: center; line-height: 1.6">כדי לראות את התיקים, פתחי את <b>קישור המשרד</b> שקיבלת, או הדביקי אותו כאן.</p>
 <div style="display: flex; flex-direction: column; gap: 12px">
-<label class="field">מייל<input id="ls-email" type="email" autocomplete="username" dir="ltr" inputmode="email"></label>
-<label class="field">סיסמה<input id="ls-pass" type="password" autocomplete="current-password" dir="ltr" onKeyDown="{{sync.onKey}}"></label>
+<label class="field">קישור המשרד או הקוד<input id="ls-code" type="text" dir="ltr" autocomplete="off" placeholder="https://…#k=…" onKeyDown="{{sync.onKey}}"></label>
 <sc-if value="{{sync.hasError}}" hint-placeholder-val="{{ false }}"><div class="act hot" style="margin-top: 0; font-size: 13.5px">{{sync.error}}</div></sc-if>
 <button type="button" class="btn acc" style="width: 100%; min-height: 48px; margin-top: 4px" onClick="{{sync.login}}" disabled="{{sync.busy}}">כניסה</button>
 </div>
-<p style="margin: 16px 0 0; font-size: 12.5px; color: #8E9CA4; text-align: center">אין לך משתמש? יש לבקש ממנהלת המערכת.</p>
+<p style="margin: 16px 0 0; font-size: 12.5px; color: #8E9CA4; text-align: center">אין לך את הקישור? יש לבקש אותו ממנהלת המערכת.</p>
 </div>
 </div>
 </sc-if>
@@ -67,7 +66,7 @@
 <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #1E2A33"><span class="live"></span>מנוע אוטומציה פעיל</div>
 <div style="margin-top: 4px">{{rulesOn}} כללים · {{autoToday}} פעולות היום</div>
 <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12.5px; color: #1E2A33"><span class="{{sync.dotCls}}"></span>{{sync.label}}</div>
-<sc-if value="{{sync.cloud}}" hint-placeholder-val="{{ false }}"><div style="font-size: 12px; margin-top: 4px; direction: rtl">{{sync.email}} · <button type="button" class="linkbtn" onClick="{{sync.logout}}">יציאה</button></div></sc-if>
+<sc-if value="{{sync.cloud}}" hint-placeholder-val="{{ false }}"><div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 12.5px; margin-top: 6px"><button type="button" class="linkbtn" onClick="{{sync.copyLink}}">{{sync.copyLabel}}</button><span style="color: #C3CDD3">|</span><button type="button" class="linkbtn" onClick="{{sync.logout}}" style="color: #5B6B75">יציאה</button></div></sc-if>
 <sc-if value="{{sync.local}}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; margin-top: 6px">הנתונים נשמרים בדפדפן של מכשיר זה. מומלץ לייצא גיבוי מדי פעם.</div></sc-if>
 <sc-if value="{{sync.hasError}}" hint-placeholder-val="{{ false }}"><div style="font-size: 11.5px; color: #B4474F; margin-top: 4px">{{sync.error}}</div></sc-if>
 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px">
@@ -727,7 +726,7 @@
 </sc-for>
 </div>
 <div class="note" style="margin-top: 14px; background: #F5F7F8"><div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12.5px; color: #1E2A33"><span class="{{sync.dotCls}}"></span>{{sync.label}}</div>
-<sc-if value="{{sync.cloud}}" hint-placeholder-val="{{ false }}"><div style="font-size: 12px; margin-top: 4px; direction: rtl">{{sync.email}} · <button type="button" class="linkbtn" onClick="{{sync.logout}}">יציאה</button></div></sc-if>
+<sc-if value="{{sync.cloud}}" hint-placeholder-val="{{ false }}"><div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 12.5px; margin-top: 6px"><button type="button" class="linkbtn" onClick="{{sync.copyLink}}">{{sync.copyLabel}}</button><span style="color: #C3CDD3">|</span><button type="button" class="linkbtn" onClick="{{sync.logout}}" style="color: #5B6B75">יציאה</button></div></sc-if>
 <sc-if value="{{sync.local}}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; margin-top: 6px">הנתונים נשמרים בדפדפן של מכשיר זה. מומלץ לייצא גיבוי מדי פעם.</div></sc-if>
 <sc-if value="{{sync.hasError}}" hint-placeholder-val="{{ false }}"><div style="font-size: 11.5px; color: #B4474F; margin-top: 4px">{{sync.error}}</div></sc-if>
 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px">
