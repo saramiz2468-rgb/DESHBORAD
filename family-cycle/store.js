@@ -1,7 +1,6 @@
 // שכבת השמירה: כל הנתונים נשמרים רק במכשיר (localStorage).
 // כשנעילה בקוד פעילה, הנתונים מוצפנים ב-AES-256-GCM עם מפתח שנגזר מהקוד (PBKDF2).
 import { validateCycle, isValidDate, sortByStart } from './calc.js';
-import { demoFamily } from './demo.js';
 
 export const KEY_PLAIN = 'family-cycle:data';
 export const KEY_ENC = 'family-cycle:enc';
@@ -211,12 +210,11 @@ export function createStore({ storage = deviceStorage(), subtle = globalThis.cry
       salt = null;
     },
 
-    async completeOnboarding({ motherName, demo, today }) {
+    async completeOnboarding({ motherName }) {
       await mutate((s) => {
         s.motherName = cleanText(motherName, 40);
         s.onboarded = true;
       });
-      if (demo) await this.loadDemo(today);
     },
 
     async updateSettings(patch) {
@@ -289,20 +287,8 @@ export function createStore({ storage = deviceStorage(), subtle = globalThis.cry
       });
     },
 
-    // ---- נתוני הדגמה ----
+    // ---- פרופילי הדגמה שנשארו מגרסה קודמת (למשל משחזור גיבוי ישן) ----
     hasDemo: () => !!state && state.daughters.some((d) => d.isDemo),
-
-    async loadDemo(today) {
-      if (this.hasDemo()) throw new StoreError('נתוני ההדגמה כבר טעונים');
-      await mutate((s) => {
-        for (const { daughter, cycles } of demoFamily(today)) {
-          s.daughters.push({
-            id: s.nextId++, ...daughter, photo: null, isDemo: true, createdAt: new Date().toISOString(),
-            cycles: sortByStart(cycles).map((c) => ({ id: s.nextId++, ...c, isDemo: true, updatedAt: new Date().toISOString() })),
-          });
-        }
-      });
-    },
 
     async deleteDemo() {
       let removed = 0;

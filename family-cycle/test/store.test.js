@@ -19,7 +19,7 @@ test('פתיחה ראשונה ושמירה במכשיר', async () => {
   const storage = memoryStorage();
   const s = createStore({ storage });
   assert.equal(s.init(), 'new');
-  await s.completeOnboarding({ motherName: 'רחל', demo: false, today: T });
+  await s.completeOnboarding({ motherName: 'רחל' });
   const d = await s.addDaughter({ name: 'נועה', birthDate: '2011-03-02' }, T);
   await s.addCycle(d.id, { start: addDays(T, -30), end: addDays(T, -26), notes: 'הערה' }, T);
 
@@ -92,15 +92,20 @@ test('נעילה בקוד: הנתונים מוצפנים, קוד שגוי נדח
   assert.equal(storage.dump()[KEY_ENC], undefined);
 });
 
-test('נתוני הדגמה: טעינה ומחיקה בלי לגעת בנתונים אמיתיים', async () => {
+test('האפליקציה מתחילה ריקה, ופרופילי הדגמה ישנים נמחקים בלי לגעת בנתונים אמיתיים', async () => {
   const s = createStore({ storage: memoryStorage() });
   s.init();
-  await s.completeOnboarding({ motherName: '', demo: true, today: T });
+  await s.completeOnboarding({ motherName: '' });
+  assert.equal(s.listDaughters().length, 0);
+  assert.equal(s.hasDemo(), false);
+  // גיבוי ישן שכולל פרופיל הדגמה
+  const old = { app: 'family-cycle', encrypted: false, data: { onboarded: true, nextId: 3, daughters: [
+    { id: 1, name: 'הדגמה', isDemo: true, cycles: [{ id: 2, start: '2026-10-01', isDemo: true }] },
+    { id: 5, name: 'אמיתית', isDemo: false, cycles: [] },
+  ] } };
+  await s.importBackup(JSON.stringify(old), async () => null);
   assert.ok(s.hasDemo());
-  assert.equal(s.listDaughters().length, 3);
-  await s.addDaughter({ name: 'אמיתית' }, T);
-  await assert.rejects(s.loadDemo(T), /כבר טעונים/);
-  assert.equal(await s.deleteDemo(), 3);
+  assert.equal(await s.deleteDemo(), 1);
   assert.deepEqual(s.listDaughters().map((d) => d.name), ['אמיתית']);
 });
 
