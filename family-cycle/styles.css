@@ -62,7 +62,7 @@ img { max-width: 100%; display: block; }
 
 /* ---------- מבנה ---------- */
 .topbar {
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
   background: rgba(251, 246, 241, 0.85);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -133,6 +133,7 @@ img { max-width: 100%; display: block; }
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 textarea.input { min-height: 90px; resize: vertical; }
+textarea.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.78rem; min-height: 140px; word-break: break-all; }
 .input:focus { outline: none; border-color: var(--rose); background: var(--white); box-shadow: 0 0 0 4px var(--pink-100); }
 input[type="date"].input { direction: rtl; text-align: right; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

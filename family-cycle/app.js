@@ -4,6 +4,9 @@ import {
 } from './calc.js';
 import { createStore } from './store.js';
 
+document.documentElement.lang = 'he';
+document.documentElement.dir = 'rtl';
+
 // ======================================================================
 // כלים
 // ======================================================================
@@ -82,7 +85,7 @@ const today = () => localToday();
 const data = () => store.get();
 
 function route() {
-  const m = /^#\/d\/(\d+)$/.exec(location.hash);
+  const m = /^#d-(\d+)$/.exec(location.hash);
   return m ? { name: 'daughter', id: Number(m[1]) } : { name: 'home' };
 }
 
@@ -106,7 +109,7 @@ function render() {
       loadDaughter(r.id);
     } catch {
       toast('הפרופיל לא נמצא', true);
-      location.hash = '#/';
+      location.hash = 'home';
       return;
     }
     renderDaughter();
@@ -160,7 +163,7 @@ function renderOnboarding() {
     } catch (e) {
       return toast(e.message, true);
     }
-    location.hash = '#/';
+    location.hash = 'home';
     render();
     if (fd.get('pin') === 'on') showLock('set');
     else toast('ברוכה הבאה 🌸');
@@ -227,7 +230,7 @@ async function pinKey(k) {
       text: 'בלי הקוד אי אפשר לפענח את הנתונים המוצפנים. איפוס ימחק את כל הנתונים במכשיר. אם יש לך קובץ גיבוי, תוכלי לשחזר ממנו אחר כך.',
       okText: 'מחיקת הכל והתחלה מחדש',
     });
-    if (ok) { store.wipe(); hideLock(); location.hash = '#/'; render(); }
+    if (ok) { store.wipe(); hideLock(); location.hash = 'home'; render(); }
     return;
   }
   if (k === 'cancel') { hideLock(); render(); return; }
@@ -319,7 +322,7 @@ function shell(content) {
   return `
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="#/"><img src="icons/icon.svg" alt=""><span>המעקב המשפחתי שלי</span></a>
+      <a class="brand" href="#home"><img src="icons/icon.svg" alt=""><span>המעקב המשפחתי שלי</span></a>
       <div class="spacer"></div>
       ${d.pinEnabled ? `<button class="btn btn-ghost btn-icon" data-action="lock-now" aria-label="נעילה">${icon('lock')}</button>` : ''}
       <div class="menu">
@@ -842,7 +845,7 @@ function daughterForm(existing) {
       try {
         await store.deleteDaughter(d.id);
         toast('הפרופיל נמחק');
-        location.hash = '#/';
+        location.hash = 'home';
         if (route().name === 'home') render();
       } catch (err) { toast(err.message, true); }
     });
@@ -863,7 +866,7 @@ function daughterForm(existing) {
           const nd = await store.addDaughter(payload, t);
           toast(`הפרופיל של ${payload.name} נוצר`);
           closeModal();
-          location.hash = `#/d/${nd.id}`;
+          location.hash = `d-${nd.id}`;
           return;
         }
         closeModal();
@@ -981,7 +984,7 @@ function settingsForm() {
         if (!ok) return settingsForm();
         store.wipe();
         hideLock();
-        location.hash = '#/';
+        location.hash = 'home';
         render();
         toast('כל הנתונים נמחקו');
       }
@@ -998,9 +1001,26 @@ function settingsForm() {
 }
 
 // ---------- גיבוי ושחזור ----------
+const embedded = (() => { try { return window.self !== window.top; } catch { return true; } })();
+
+function showBackupText(text) {
+  openModal(`${modalHead('גיבוי')}
+    <p class="lead">העתיקי את הטקסט ושמרי אותו במקום בטוח (למשל בהערה או במייל לעצמך). לשחזור: תפריט ← שחזור מגיבוי ← הדבקה.</p>
+    <div class="field"><label for="bk-text">נתוני הגיבוי${data().pinEnabled ? ' (מוצפנים בקוד האישי)' : ''}</label>
+      <textarea class="input mono" id="bk-text" readonly dir="ltr">${esc(text)}</textarea></div>
+    <div class="form-actions"><button class="btn btn-primary grow" type="button" id="bk-copy">העתקה</button>
+      <button class="btn btn-ghost" type="button" data-action="close-modal">סגירה</button></div>`, (m) => {
+    const ta = m.querySelector('#bk-text');
+    m.querySelector('#bk-copy').onclick = async () => {
+      try { await navigator.clipboard.writeText(text); toast('הגיבוי הועתק'); } catch { ta.focus(); ta.select(); toast('סמני והעתיקי את הטקסט'); }
+    };
+  });
+}
+
 async function downloadBackup() {
   try {
     const text = await store.exportBackup();
+    if (embedded) return showBackupText(text);
     const blob = new Blob([text], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1037,30 +1057,48 @@ function askPinDialog() {
   });
 }
 
+async function restoreFromText(text) {
+  const ok = await confirmDialog({
+    title: 'שחזור מגיבוי',
+    text: 'השחזור יחליף את כל הנתונים שנמצאים כרגע במכשיר בנתונים מהגיבוי. להמשיך?',
+    okText: 'שחזור', danger: false,
+  });
+  if (!ok) return;
+  try {
+    const done = await store.importBackup(text, askPinDialog);
+    if (!done) return;
+    state.current = null;
+    location.hash = 'home';
+    render();
+    toast('הנתונים שוחזרו');
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
 function pickRestore() {
-  const input = document.getElementById('restore-file');
-  input.value = '';
-  input.onchange = async () => {
-    const file = input.files[0];
-    if (!file) return;
-    const ok = await confirmDialog({
-      title: 'שחזור מגיבוי',
-      text: 'השחזור יחליף את כל הנתונים שנמצאים כרגע במכשיר בנתונים מקובץ הגיבוי. להמשיך?',
-      okText: 'שחזור', danger: false,
-    });
-    if (!ok) return;
-    try {
-      const done = await store.importBackup(await file.text(), askPinDialog);
-      if (!done) return;
-      state.current = null;
-      location.hash = '#/';
-      render();
-      toast('הנתונים שוחזרו');
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
-  input.click();
+  openModal(`${modalHead('שחזור מגיבוי')}
+    <p class="lead">בחרי קובץ גיבוי, או הדביקי את טקסט הגיבוי.</p>
+    <div class="form-actions"><button class="btn btn-soft" type="button" id="rs-file">${icon('upload')}בחירת קובץ</button></div>
+    <div class="field"><label for="rs-text">או הדבקת טקסט הגיבוי</label>
+      <textarea class="input mono" id="rs-text" dir="ltr" placeholder='{"app":"family-cycle",...}'></textarea></div>
+    <div class="form-actions"><button class="btn btn-primary grow" type="button" id="rs-go">שחזור</button>
+      <button class="btn btn-ghost" type="button" data-action="close-modal">ביטול</button></div>`, (m) => {
+    m.querySelector('#rs-go').onclick = () => {
+      const text = m.querySelector('#rs-text').value.trim();
+      if (!text) return toast('הדביקי את טקסט הגיבוי', true);
+      restoreFromText(text);
+    };
+    m.querySelector('#rs-file').onclick = () => {
+      const input = document.getElementById('restore-file');
+      input.value = '';
+      input.onchange = async () => {
+        const file = input.files[0];
+        if (file) restoreFromText(await file.text());
+      };
+      input.click();
+    };
+  });
 }
 
 // ======================================================================
@@ -1082,8 +1120,8 @@ async function onAction(action, el) {
       el.setAttribute('aria-expanded', state.menuOpen);
       return;
     }
-    case 'home': location.hash = '#/'; return;
-    case 'open': location.hash = `#/d/${el.dataset.id}`; return;
+    case 'home': location.hash = 'home'; return;
+    case 'open': location.hash = `d-${el.dataset.id}`; return;
     case 'add-daughter': return daughterForm(null);
     case 'edit-daughter': return daughterForm(state.current.daughter);
     case 'new-cycle': return cycleForm(null, el.dataset.day);
@@ -1127,7 +1165,7 @@ async function onAction(action, el) {
     case 'backup': return downloadBackup();
     case 'restore': return pickRestore();
     case 'demo-load':
-      try { await store.loadDemo(today()); toast('נתוני ההדגמה נטענו'); location.hash = '#/'; render(); } catch (e) { toast(e.message, true); }
+      try { await store.loadDemo(today()); toast('נתוני ההדגמה נטענו'); location.hash = 'home'; render(); } catch (e) { toast(e.message, true); }
       return;
     case 'demo-delete': {
       const ok = await confirmDialog({ title: 'מחיקת נתוני הדגמה', text: 'למחוק את כל פרופילי ההדגמה ונתוניהם? הנתונים שהזנת בעצמך לא יימחקו.' });
@@ -1135,7 +1173,7 @@ async function onAction(action, el) {
       try {
         await store.deleteDemo();
         toast('נתוני ההדגמה נמחקו');
-        if (state.current?.daughter.isDemo) location.hash = '#/';
+        if (state.current?.daughter.isDemo) location.hash = 'home';
         render();
       } catch (e) { toast(e.message, true); }
       return;

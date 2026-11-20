@@ -54,7 +54,11 @@ function normalize(s) {
   return out;
 }
 
-export function createStore({ storage = globalThis.localStorage, subtle = globalThis.crypto?.subtle } = {}) {
+function deviceStorage() {
+  try { return globalThis.localStorage || null; } catch { return null; }
+}
+
+export function createStore({ storage = deviceStorage(), subtle = globalThis.crypto?.subtle } = {}) {
   let state = null;
   let key = null;
   let salt = null;
@@ -63,7 +67,7 @@ export function createStore({ storage = globalThis.localStorage, subtle = global
   const ls = {
     get(k) { try { return storage.getItem(k); } catch { return null; } },
     set(k, v) {
-      try { storage.setItem(k, v); } catch {
+      try { if (!storage) throw new Error('no storage'); storage.setItem(k, v); } catch {
         throw new StoreError('השמירה נכשלה. ייתכן שהאחסון במכשיר מלא או חסום (למשל בגלישה פרטית).');
       }
     },
