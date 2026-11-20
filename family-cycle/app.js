@@ -146,7 +146,6 @@ function renderOnboarding() {
       <form id="onb-form" novalidate>
         <div class="field"><label for="o-name">איך לקרוא לך? <span class="muted small">(אופציונלי)</span></label>
           <input class="input" id="o-name" name="name" autocomplete="given-name" maxlength="40" placeholder="למשל: אמא"></div>
-        <label class="check"><input type="checkbox" name="demo" checked> להוסיף נתוני הדגמה כדי לראות איך זה נראה (אפשר למחוק בכל רגע)</label>
         <label class="check"><input type="checkbox" name="pin" checked> לנעול בקוד אישי (מומלץ). הנתונים יוצפנו במכשיר</label>
         <button class="btn btn-primary btn-block" type="submit">התחלה</button>
       </form>
@@ -159,7 +158,7 @@ function renderOnboarding() {
     ev.preventDefault();
     const fd = new FormData(form);
     try {
-      await store.completeOnboarding({ motherName: fd.get('name'), demo: fd.get('demo') === 'on', today: today() });
+      await store.completeOnboarding({ motherName: fd.get('name') });
     } catch (e) {
       return toast(e.message, true);
     }
@@ -332,7 +331,7 @@ function shell(content) {
           <button data-action="settings">${icon('settings')}הגדרות ופרטיות</button>
           <button data-action="backup">${icon('download')}גיבוי לקובץ</button>
           <button data-action="restore">${icon('upload')}שחזור מגיבוי</button>
-          ${hasDemo ? `<button data-action="demo-delete">${icon('trash')}מחיקת נתוני הדגמה</button>` : `<button data-action="demo-load">${icon('sparkle')}טעינת נתוני הדגמה</button>`}
+          ${hasDemo ? `<button data-action="demo-delete">${icon('trash')}מחיקת נתוני הדגמה</button>` : ''}
           ${d.pinEnabled ? `<button data-action="lock-now">${icon('lock')}נעילה</button>` : ''}
         </div>
       </div>
@@ -410,7 +409,7 @@ function renderHome() {
     </section>
     ${store.hasDemo() ? `
     <div class="demo-banner">${icon('sparkle')}
-      <span class="grow">מוצגים כרגע נתוני הדגמה, רק כדי להכיר את הממשק. הנתונים שתזיני ישמרו גם אחרי המחיקה.</span>
+      <span class="grow">יש כאן פרופילי הדגמה מגרסה קודמת. אפשר למחוק אותם, והנתונים שהזנת בעצמך יישארו.</span>
       <button class="btn btn-lilac btn-sm" data-action="demo-delete">מחיקת נתוני הדגמה</button>
     </div>` : ''}
     ${ds.length ? `
@@ -424,7 +423,6 @@ function renderHome() {
       <p>הוסיפי פרופיל לכל אחת מהבנות. לכל פרופיל יש מעקב נפרד לגמרי – תאריכים, היסטוריה ותחזיות.</p>
       <div class="form-actions">
         <button class="btn btn-primary" data-action="add-daughter">${icon('plus')}הוספת בת</button>
-        <button class="btn btn-lilac" data-action="demo-load">${icon('sparkle')}לראות עם נתוני הדגמה</button>
       </div>
     </section>`}`;
   $app.innerHTML = shell(content);
@@ -1164,9 +1162,6 @@ async function onAction(action, el) {
     case 'settings': return settingsForm();
     case 'backup': return downloadBackup();
     case 'restore': return pickRestore();
-    case 'demo-load':
-      try { await store.loadDemo(today()); toast('נתוני ההדגמה נטענו'); location.hash = 'home'; render(); } catch (e) { toast(e.message, true); }
-      return;
     case 'demo-delete': {
       const ok = await confirmDialog({ title: 'מחיקת נתוני הדגמה', text: 'למחוק את כל פרופילי ההדגמה ונתוניהם? הנתונים שהזנת בעצמך לא יימחקו.' });
       if (!ok) return;
