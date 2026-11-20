@@ -1,2 +1,4 @@
 __pycache__/
 *.pyc
+family-cycle/data/
+node_modules/
