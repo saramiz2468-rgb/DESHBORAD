@@ -28,8 +28,8 @@
   --r-sm: 10px;
   --r: 18px;
   --r-lg: 26px;
-  --font: 'Assistant', 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
-  --font-display: 'Varela Round', 'Assistant', sans-serif;
+  --font: system-ui, -apple-system, 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
+  --font-display: 'Varela Round', 'Arial Rounded MT Bold', var(--font);
 }
 
 * { box-sizing: border-box; }
@@ -343,6 +343,33 @@ table.history { width: 100%; border-collapse: separate; border-spacing: 0; font-
 .menu-pop button.danger svg { color: var(--danger); }
 
 footer.foot { text-align: center; color: var(--muted); font-size: 0.82rem; padding: 0 16px 32px; }
+
+/* ---------- מסך נעילה ---------- */
+.lock { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; text-align: center;
+  background: radial-gradient(800px 500px at 100% 0%, var(--pink-100), transparent 60%), radial-gradient(700px 500px at 0% 100%, var(--lilac-50), transparent 60%), var(--cream); }
+.lock-logo { width: 64px; height: 64px; margin-bottom: 10px; }
+.lock h1 { font-size: 1.5rem; }
+.lock-msg { margin: 6px 0 0; color: var(--ink-2); min-height: 1.6em; }
+.lock-msg.err { color: var(--danger); font-weight: 600; }
+.pin-dots { display: flex; gap: 14px; margin: 26px 0; direction: ltr; }
+.pin-dots i { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--rose-strong); }
+.pin-dots i.opt { opacity: 0.4; }
+.pin-dots i.on { background: var(--rose-strong); opacity: 1; }
+.pin-dots.shake { animation: shake 0.4s; }
+@keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+.keypad { display: grid; grid-template-columns: repeat(3, 72px); gap: 14px; direction: ltr; }
+.keypad button { width: 72px; height: 72px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.75); box-shadow: var(--shadow-sm); font-size: 1.6rem; cursor: pointer; color: var(--ink); }
+.keypad button:hover { background: var(--white); }
+.keypad button:active { background: var(--pink-100); }
+.keypad .kp-text { font-size: 0.95rem; font-weight: 600; background: transparent; box-shadow: none; }
+.keypad .kp-ok { color: var(--rose-strong); }
+.lock-forgot { margin-top: 24px; }
+
+/* ---------- הגדרות ---------- */
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.set-row .form-actions { margin: 0; flex-wrap: nowrap; }
+.select-sm { width: auto; min-height: 40px; padding: 6px 12px; }
+hr.sep { border: 0; border-top: 1px solid var(--line); margin: 18px 0; }
 
 /* ---------- רספונסיביות ---------- */
 @media (max-width: 900px) {

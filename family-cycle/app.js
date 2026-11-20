@@ -2,6 +2,7 @@ import {
   analyze, validateCycle, localToday, formatDate, ageFrom, addDays, diffDays, toDay, fromDay,
   bleedDays, OPEN_PERIOD_DAYS,
 } from './calc.js';
+import { createStore } from './store.js';
 
 // ======================================================================
 // כלים
@@ -17,6 +18,9 @@ const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 
 const DOW = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 
 const ICON = {
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5M4 20h16"/>',
+  upload: '<path d="M12 16V5M7 10l5-5 5 5M4 20h16"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   back: '<path d="M9 18l6-6-6-6"/>',
   chevL: '<path d="M15 18l-6-6 6-6"/>',
@@ -30,7 +34,6 @@ const ICON = {
   edit: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/>',
   trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',
-  logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/>',
   lock: '<rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
   heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
@@ -63,184 +66,277 @@ const daysWord = (n) => (n === 1 ? 'יום אחד' : n === 2 ? 'יומיים' : 
 const numFmt = (n) => (n == null ? '—' : Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 // ======================================================================
-// תקשורת עם השרת
+// שמירה מקומית ומצב
 // ======================================================================
-class ApiError extends Error {
-  constructor(status, message, details) { super(message); this.status = status; this.details = details; }
-}
+const store = createStore();
 
-async function api(method, url, body) {
-  let res;
-  try {
-    res = await fetch(url, {
-      method,
-      credentials: 'same-origin',
-      headers: { 'X-Requested-With': 'fetch', ...(body ? { 'Content-Type': 'application/json' } : {}) },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-  } catch {
-    throw new ApiError(0, 'אין חיבור לשרת. בדקי את החיבור ונסי שוב.');
-  }
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    if (res.status === 401 && state.user && !url.startsWith('/api/auth')) {
-      state.user = null;
-      closeModal();
-      render();
-    }
-    throw new ApiError(res.status, data.error || 'משהו השתבש', data.details);
-  }
-  return data;
-}
-
-// ======================================================================
-// מצב
-// ======================================================================
 const state = {
-  user: null,
-  hasDemo: false,
-  daughters: [],
   current: null, // { daughter, cycles }
   calMonth: null, // 'YYYY-MM'
   selectedDay: null,
   sortDir: 'desc',
-  authTab: 'login',
   menuOpen: false,
 };
 
 const today = () => localToday();
+const data = () => store.get();
 
 function route() {
   const m = /^#\/d\/(\d+)$/.exec(location.hash);
   return m ? { name: 'daughter', id: Number(m[1]) } : { name: 'home' };
 }
 
-async function loadHome() {
-  const data = await api('GET', '/api/daughters');
-  state.daughters = data.daughters;
-  state.hasDemo = data.hasDemo;
-}
-
-async function loadDaughter(id) {
-  const data = await api('GET', `/api/daughters/${id}`);
+function loadDaughter(id) {
+  const daughter = store.getDaughter(id);
   const switched = !state.current || state.current.daughter.id !== id;
-  state.current = data;
+  state.current = { daughter, cycles: daughter.cycles };
   if (switched) {
     state.calMonth = today().slice(0, 7);
     state.selectedDay = null;
   }
 }
 
-async function render() {
+function render() {
   closeMenu();
-  if (!state.user) return renderAuth();
+  if (store.isLocked()) return showLock('unlock');
+  if (!data().onboarded) return renderOnboarding();
   const r = route();
-  try {
-    if (r.name === 'daughter') {
-      await loadDaughter(r.id);
-      renderDaughter();
-    } else {
-      state.current = null;
-      await loadHome();
-      renderHome();
-    }
-  } catch (e) {
-    if (e.status === 404) {
+  if (r.name === 'daughter') {
+    try {
+      loadDaughter(r.id);
+    } catch {
       toast('הפרופיל לא נמצא', true);
       location.hash = '#/';
       return;
     }
-    if (e.status !== 401) {
-      $app.innerHTML = shell(`<div class="card empty"><h2>לא הצלחנו לטעון את הנתונים</h2><p>${esc(e.message)}</p>
-        <div class="form-actions"><button class="btn btn-primary" data-action="reload">נסי שוב</button></div></div>`);
-    }
+    renderDaughter();
+  } else {
+    state.current = null;
+    renderHome();
+  }
+}
+
+/** מריץ פעולת שמירה ומציג שגיאה אם נכשלה */
+async function run(fn, okMsg) {
+  try {
+    const out = await fn();
+    if (okMsg) toast(okMsg);
+    return out;
+  } catch (e) {
+    toast(e.message, true);
+    throw e;
   }
 }
 
 // ======================================================================
-// מסך התחברות
+// מסך פתיחה (פעם ראשונה)
 // ======================================================================
-function renderAuth() {
-  const login = state.authTab === 'login';
+function renderOnboarding() {
   $app.innerHTML = `
   <main id="main" class="auth-wrap">
     <div class="auth-card">
       <div class="auth-head">
-        <img src="icon.svg" alt="">
+        <img src="icons/icon.svg" alt="">
         <h1>המעקב המשפחתי שלי</h1>
         <p>מקום אחד, רגוע ומסודר, למעקב המחזור של כל אחת מהבנות</p>
       </div>
-      <div class="tabs" role="tablist">
-        <button role="tab" aria-selected="${login}" data-action="auth-tab" data-tab="login">כניסה</button>
-        <button role="tab" aria-selected="${!login}" data-action="auth-tab" data-tab="register">הרשמה</button>
-      </div>
-      <form id="auth-form" novalidate>
-        <div class="form-error" hidden></div>
-        ${login ? '' : `
-        <div class="field"><label for="a-name">השם שלך</label>
-          <input class="input" id="a-name" name="name" autocomplete="given-name" required maxlength="40"></div>`}
-        <div class="field"><label for="a-email">אימייל</label>
-          <input class="input" id="a-email" name="email" type="email" dir="ltr" autocomplete="email" required></div>
-        <div class="field"><label for="a-pass">סיסמה</label>
-          <input class="input" id="a-pass" name="password" type="password" dir="ltr" required minlength="8"
-            autocomplete="${login ? 'current-password' : 'new-password'}">
-          ${login ? '' : '<span class="hint">לפחות 8 תווים</span>'}</div>
-        ${login ? '' : `
-        <label class="check"><input type="checkbox" name="demo" checked> להוסיף נתוני הדגמה כדי לראות איך זה נראה (אפשר למחוק בכל רגע)</label>`}
-        <button class="btn btn-primary btn-block" type="submit">${login ? 'כניסה' : 'יצירת חשבון'}</button>
+      <form id="onb-form" novalidate>
+        <div class="field"><label for="o-name">איך לקרוא לך? <span class="muted small">(אופציונלי)</span></label>
+          <input class="input" id="o-name" name="name" autocomplete="given-name" maxlength="40" placeholder="למשל: אמא"></div>
+        <label class="check"><input type="checkbox" name="demo" checked> להוסיף נתוני הדגמה כדי לראות איך זה נראה (אפשר למחוק בכל רגע)</label>
+        <label class="check"><input type="checkbox" name="pin" checked> לנעול בקוד אישי (מומלץ). הנתונים יוצפנו במכשיר</label>
+        <button class="btn btn-primary btn-block" type="submit">התחלה</button>
       </form>
-      <div class="privacy-note">${icon('lock')}<span>הנתונים נשמרים בשרת מוצפנים, ונגישים רק לך לאחר כניסה עם הסיסמה.</span></div>
+      <div class="privacy-note">${icon('lock')}<span>אין הרשמה ואין שרת. כל המידע נשמר רק במכשיר הזה, ולא נשלח לשום מקום.</span></div>
     </div>
   </main>`;
-  const form = document.getElementById('auth-form');
+  const form = document.getElementById('onb-form');
   form.querySelector('input').focus();
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const fd = new FormData(form);
-    const errBox = form.querySelector('.form-error');
-    const btn = form.querySelector('button[type=submit]');
-    btn.disabled = true;
-    errBox.hidden = true;
     try {
-      const payload = { email: fd.get('email'), password: fd.get('password') };
-      if (!login) Object.assign(payload, { name: fd.get('name'), demo: fd.get('demo') === 'on' });
-      const data = await api('POST', login ? '/api/auth/login' : '/api/auth/register', payload);
-      state.user = data.user;
-      location.hash = '#/';
-      await render();
-      if (!login) toast(`ברוכה הבאה, ${data.user.name} 🌸`);
+      await store.completeOnboarding({ motherName: fd.get('name'), demo: fd.get('demo') === 'on', today: today() });
     } catch (e) {
-      errBox.textContent = e.message;
-      errBox.hidden = false;
-      btn.disabled = false;
+      return toast(e.message, true);
     }
+    location.hash = '#/';
+    render();
+    if (fd.get('pin') === 'on') showLock('set');
+    else toast('ברוכה הבאה 🌸');
   });
 }
+
+// ======================================================================
+// נעילה בקוד אישי
+// ======================================================================
+const $lock = document.getElementById('lock');
+let pinBuf = '';
+let pinMode = null;
+let pinFirst = '';
+let lastActive = Date.now();
+
+function showLock(mode) {
+  pinMode = mode;
+  pinBuf = '';
+  pinFirst = '';
+  closeModal();
+  $lock.hidden = false;
+  $app.setAttribute('aria-hidden', 'true');
+  if (mode === 'unlock') $app.innerHTML = '';
+  drawLock();
+}
+
+function hideLock() {
+  $lock.hidden = true;
+  $lock.innerHTML = '';
+  $app.removeAttribute('aria-hidden');
+}
+
+function drawLock(msg, shakeIt = false) {
+  const titles = {
+    unlock: 'הזיני את הקוד האישי',
+    set: 'בחרי קוד בן 4–6 ספרות',
+    confirm: 'הזיני שוב את הקוד לאישור',
+  };
+  $lock.innerHTML = `
+    <img src="icons/icon.svg" alt="" class="lock-logo">
+    <h1>המעקב המשפחתי שלי</h1>
+    <p class="lock-msg ${msg ? 'err' : ''}" role="status">${esc(msg || titles[pinMode])}</p>
+    <div class="pin-dots ${shakeIt ? 'shake' : ''}" aria-hidden="true">
+      ${[0, 1, 2, 3, 4, 5].map((i) => `<i class="${i < pinBuf.length ? 'on' : ''} ${i >= 4 ? 'opt' : ''}"></i>`).join('')}
+    </div>
+    <div class="keypad">
+      ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-pin="${n}" aria-label="${n}">${n}</button>`).join('')}
+      <button data-pin="${pinMode === 'unlock' ? 'del' : 'cancel'}" class="kp-text">${pinMode === 'unlock' ? 'מחיקה' : 'ביטול'}</button>
+      <button data-pin="0" aria-label="0">0</button>
+      <button data-pin="ok" class="kp-text kp-ok">אישור</button>
+    </div>
+    ${pinMode === 'unlock' ? '<button class="link lock-forgot" data-pin="forgot">שכחתי את הקוד</button>' : ''}`;
+}
+
+function shake(msg) {
+  pinBuf = '';
+  drawLock(msg, true);
+}
+
+async function pinKey(k) {
+  if (k === 'forgot') {
+    const ok = await confirmDialog({
+      title: 'איפוס האפליקציה',
+      text: 'בלי הקוד אי אפשר לפענח את הנתונים המוצפנים. איפוס ימחק את כל הנתונים במכשיר. אם יש לך קובץ גיבוי, תוכלי לשחזר ממנו אחר כך.',
+      okText: 'מחיקת הכל והתחלה מחדש',
+    });
+    if (ok) { store.wipe(); hideLock(); location.hash = '#/'; render(); }
+    return;
+  }
+  if (k === 'cancel') { hideLock(); render(); return; }
+  if (k === 'del') { pinBuf = pinBuf.slice(0, -1); return drawLock(); }
+  if (k === 'ok') return pinSubmit();
+  if (pinBuf.length >= 6) return;
+  pinBuf += k;
+  drawLock();
+  if (pinMode === 'unlock') {
+    const len = store.pinLength();
+    if (len ? pinBuf.length === len : pinBuf.length >= 4) tryUnlock(!len);
+  }
+}
+
+let unlocking = false;
+async function tryUnlock(silent) {
+  if (unlocking) return;
+  unlocking = true;
+  const attempt = pinBuf;
+  const ok = await store.unlock(attempt);
+  unlocking = false;
+  if (ok) {
+    hideLock();
+    lastActive = Date.now();
+    render();
+  } else if (!silent || attempt.length >= 6) {
+    shake('הקוד שגוי');
+  }
+}
+
+async function pinSubmit() {
+  if (pinMode === 'unlock') return tryUnlock(false);
+  if (pinBuf.length < 4) return shake('הקוד צריך לכלול 4 ספרות לפחות');
+  if (pinMode === 'set') {
+    pinFirst = pinBuf;
+    pinBuf = '';
+    pinMode = 'confirm';
+    return drawLock();
+  }
+  if (pinMode === 'confirm') {
+    if (pinBuf !== pinFirst) { pinMode = 'set'; return shake('הקודים אינם תואמים. נסי שוב'); }
+    try {
+      await store.setPin(pinBuf);
+    } catch (e) {
+      return shake(e.message);
+    }
+    hideLock();
+    render();
+    toast('הנעילה הופעלה והנתונים הוצפנו');
+  }
+}
+
+function lockNow() {
+  if (!store.lock()) {
+    toast('כדי לנעול, הפעילי קוד אישי בהגדרות');
+    return settingsForm();
+  }
+  state.current = null;
+  showLock('unlock');
+}
+
+$lock.addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-pin]');
+  if (b) pinKey(b.dataset.pin);
+});
+document.addEventListener('keydown', (ev) => {
+  if ($lock.hidden || $modalRoot.innerHTML) return;
+  if (/^\d$/.test(ev.key)) pinKey(ev.key);
+  else if (ev.key === 'Backspace') { pinBuf = pinBuf.slice(0, -1); drawLock(); }
+  else if (ev.key === 'Enter') pinSubmit();
+});
+
+// נעילה אוטומטית כשהאפליקציה ברקע
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    lastActive = Date.now();
+  } else if (!store.isLocked() && data().pinEnabled && $lock.hidden &&
+    Date.now() - lastActive >= (data().settings.autoLockMin || 0) * 60000) {
+    lockNow();
+  }
+});
 
 // ======================================================================
 // מעטפת עם סרגל עליון
 // ======================================================================
 function shell(content) {
-  const u = state.user;
+  const d = data();
+  const hasDemo = store.hasDemo();
   return `
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="#/"><img src="icon.svg" alt=""><span>המעקב המשפחתי שלי</span></a>
+      <a class="brand" href="#/"><img src="icons/icon.svg" alt=""><span>המעקב המשפחתי שלי</span></a>
       <div class="spacer"></div>
+      ${d.pinEnabled ? `<button class="btn btn-ghost btn-icon" data-action="lock-now" aria-label="נעילה">${icon('lock')}</button>` : ''}
       <div class="menu">
         <button class="btn btn-ghost btn-sm" data-action="menu" aria-haspopup="true" aria-expanded="${state.menuOpen}">
-          ${icon('user')}<span>${esc(u.name)}</span></button>
+          ${icon('settings')}<span>תפריט</span></button>
         <div class="menu-pop" ${state.menuOpen ? '' : 'hidden'}>
-          <div class="who"><strong>${esc(u.name)}</strong><span class="muted small" dir="ltr">${esc(u.email)}</span></div>
-          ${state.hasDemo ? `<button data-action="demo-delete">${icon('trash')}מחיקת נתוני הדגמה</button>` : `<button data-action="demo-load">${icon('sparkle')}טעינת נתוני הדגמה</button>`}
-          <button data-action="logout">${icon('logout')}יציאה</button>
-          <button class="danger" data-action="account-delete">${icon('trash')}מחיקת החשבון</button>
+          <button data-action="settings">${icon('settings')}הגדרות ופרטיות</button>
+          <button data-action="backup">${icon('download')}גיבוי לקובץ</button>
+          <button data-action="restore">${icon('upload')}שחזור מגיבוי</button>
+          ${hasDemo ? `<button data-action="demo-delete">${icon('trash')}מחיקת נתוני הדגמה</button>` : `<button data-action="demo-load">${icon('sparkle')}טעינת נתוני הדגמה</button>`}
+          ${d.pinEnabled ? `<button data-action="lock-now">${icon('lock')}נעילה</button>` : ''}
         </div>
       </div>
     </div>
   </header>
   <main id="main" class="container">${content}</main>
-  <footer class="foot">המידע באפליקציה נועד למעקב אישי בלבד ואינו מהווה ייעוץ רפואי. תחזיות הן הערכה בלבד.</footer>`;
+  <footer class="foot">כל המידע נשמר רק במכשיר הזה${d.pinEnabled ? ' ומוצפן בקוד אישי' : ''}. המידע נועד למעקב אישי ואינו מהווה ייעוץ רפואי. תחזיות הן הערכה בלבד.</footer>`;
 }
 
 function avatar(d, size = '') {
@@ -257,7 +353,7 @@ function statusBadge(a) {
 function greeting(name) {
   const h = new Date().getHours();
   const g = h < 5 ? 'לילה טוב' : h < 12 ? 'בוקר טוב' : h < 17 ? 'צהריים טובים' : h < 21 ? 'ערב טוב' : 'לילה טוב';
-  return `${g}, ${esc(name)} 🌸`;
+  return name ? `${g}, ${esc(name)} 🌸` : `${g} 🌸`;
 }
 
 // ======================================================================
@@ -298,18 +394,18 @@ function daughterCard(d) {
 }
 
 function renderHome() {
-  const ds = state.daughters;
+  const ds = store.listDaughters();
   const t = today();
   const content = `
     <section class="hero">
       <div>
         <h1>המעקב המשפחתי שלי</h1>
-        <p class="greet">${greeting(state.user.name)}</p>
+        <p class="greet">${greeting(data().motherName)}</p>
         <div class="date">${esc(hebrewLongDate(t))}</div>
       </div>
       <button class="btn btn-primary" data-action="add-daughter">${icon('plus')}הוספת בת</button>
     </section>
-    ${state.hasDemo ? `
+    ${store.hasDemo() ? `
     <div class="demo-banner">${icon('sparkle')}
       <span class="grow">מוצגים כרגע נתוני הדגמה, רק כדי להכיר את הממשק. הנתונים שתזיני ישמרו גם אחרי המחיקה.</span>
       <button class="btn btn-lilac btn-sm" data-action="demo-delete">מחיקת נתוני הדגמה</button>
@@ -695,7 +791,7 @@ function resizeImage(file) {
 }
 
 function daughterForm(existing) {
-  const d = existing || { name: '', birthDate: '', photo: null, color: state.daughters.length % 6 };
+  const d = existing || { name: '', birthDate: '', photo: null, color: store.listDaughters().length % 6 };
   let photo = d.photo || null;
   const t = today();
   openModal(`${modalHead(existing ? 'עריכת פרטים' : 'הוספת בת')}
@@ -744,7 +840,7 @@ function daughterForm(existing) {
       });
       if (!ok) return;
       try {
-        await api('DELETE', `/api/daughters/${d.id}`);
+        await store.deleteDaughter(d.id);
         toast('הפרופיל נמחק');
         location.hash = '#/';
         if (route().name === 'home') render();
@@ -761,13 +857,13 @@ function daughterForm(existing) {
       btn.disabled = true;
       try {
         if (existing) {
-          await api('PUT', `/api/daughters/${d.id}`, payload);
+          await store.updateDaughter(d.id, payload, t);
           toast('הפרטים עודכנו');
         } else {
-          const r = await api('POST', '/api/daughters', payload);
+          const nd = await store.addDaughter(payload, t);
           toast(`הפרופיל של ${payload.name} נוצר`);
           closeModal();
-          location.hash = `#/d/${r.daughter.id}`;
+          location.hash = `#/d/${nd.id}`;
           return;
         }
         closeModal();
@@ -822,8 +918,8 @@ function cycleForm(existing, presetStart) {
       const btn = form.querySelector('[type=submit]');
       btn.disabled = true;
       try {
-        if (existing) await api('PUT', `/api/daughters/${d.id}/cycles/${existing.id}`, payload);
-        else await api('POST', `/api/daughters/${d.id}/cycles`, payload);
+        if (existing) await store.updateCycle(d.id, existing.id, payload, t);
+        else await store.addCycle(d.id, payload, t);
         closeModal();
         state.calMonth = payload.start.slice(0, 7);
         state.selectedDay = payload.start;
@@ -837,31 +933,134 @@ function cycleForm(existing, presetStart) {
   });
 }
 
-function accountDeleteForm() {
-  openModal(`${modalHead('מחיקת החשבון')}
-    <p>מחיקת החשבון תמחק לצמיתות את כל הפרופילים וכל נתוני המחזור. לא ניתן לשחזר.</p>
-    <form id="acc-form" novalidate>
-      <div class="form-error" hidden></div>
-      <div class="field"><label for="acc-pass">לאישור, הזיני את הסיסמה</label>
-        <input class="input" id="acc-pass" type="password" dir="ltr" autocomplete="current-password" required autofocus></div>
-      <div class="form-actions">
-        <button class="btn btn-danger grow" type="submit">מחיקת החשבון לצמיתות</button>
-        <button class="btn btn-ghost" type="button" data-action="close-modal">ביטול</button>
+// ---------- הגדרות ופרטיות ----------
+function settingsForm() {
+  const d = data();
+  const lockOpts = [[0, 'מיד'], [1, 'אחרי דקה'], [5, 'אחרי 5 דקות'], [15, 'אחרי 15 דקות']];
+  openModal(`${modalHead('הגדרות ופרטיות')}
+    <form id="s-form" novalidate>
+      <div class="field"><label for="s-name">איך לקרוא לך</label>
+        <input class="input" id="s-name" name="name" maxlength="40" value="${esc(d.motherName)}" placeholder="למשל: אמא"></div>
+      <div class="set-row">
+        <div><strong>נעילה בקוד אישי</strong>
+          <div class="small muted">${d.pinEnabled ? 'פעילה. הנתונים מוצפנים במכשיר (AES-256).' : 'כבויה. הנתונים שמורים במכשיר בלי הצפנה.'}</div></div>
+        <button type="button" class="btn btn-sm ${d.pinEnabled ? 'btn-ghost' : 'btn-primary'}" data-set="${d.pinEnabled ? 'pin-off' : 'pin-on'}">${d.pinEnabled ? 'ביטול' : 'הפעלה'}</button>
       </div>
+      ${d.pinEnabled ? `
+      <div class="set-row"><strong>החלפת קוד</strong><button type="button" class="btn btn-sm btn-ghost" data-set="pin-change">החלפה</button></div>
+      <div class="set-row"><div><strong>נעילה אוטומטית</strong><div class="small muted">כשהאפליקציה עוברת לרקע</div></div>
+        <select class="input select-sm" name="autoLockMin" aria-label="נעילה אוטומטית">
+          ${lockOpts.map(([v, l]) => `<option value="${v}" ${Number(d.settings.autoLockMin) === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select></div>` : ''}
+      <div class="set-row"><div><strong>גיבוי</strong><div class="small muted">הנתונים קיימים רק במכשיר הזה. מומלץ לגבות מדי פעם.</div></div>
+        <span class="form-actions"><button type="button" class="btn btn-sm btn-soft" data-set="backup">גיבוי</button><button type="button" class="btn btn-sm btn-ghost" data-set="restore">שחזור</button></span></div>
+      <div class="form-actions">
+        <button class="btn btn-primary grow" type="submit">שמירה</button>
+        <button class="btn btn-ghost" type="button" data-action="close-modal">סגירה</button>
+      </div>
+      <hr class="sep">
+      <button type="button" class="btn btn-danger btn-block" data-set="wipe">${icon('trash')}מחיקת כל הנתונים מהמכשיר</button>
     </form>`, (m) => {
-    const form = m.querySelector('#acc-form');
-    form.addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      try {
-        await api('DELETE', '/api/me', { password: form.querySelector('#acc-pass').value });
-        closeModal();
-        state.user = null;
+    const form = m.querySelector('#s-form');
+    form.addEventListener('click', async (ev) => {
+      const b = ev.target.closest('[data-set]');
+      if (!b) return;
+      const act = b.dataset.set;
+      if (act === 'pin-on' || act === 'pin-change') return showLock('set');
+      if (act === 'pin-off') {
+        const ok = await confirmDialog({ title: 'ביטול הנעילה', text: 'הנתונים יישמרו במכשיר בלי הצפנה, וכל מי שפותח את הדפדפן יוכל לראות אותם. להמשיך?', okText: 'ביטול הנעילה' });
+        if (!ok) return settingsForm();
+        await run(() => store.disablePin(), 'הנעילה בוטלה');
+        render();
+        return settingsForm();
+      }
+      if (act === 'backup') return downloadBackup();
+      if (act === 'restore') return pickRestore();
+      if (act === 'wipe') {
+        const ok = await confirmDialog({ title: 'מחיקת כל הנתונים', text: 'כל הפרופילים וכל נתוני המחזור יימחקו מהמכשיר לצמיתות. לא ניתן לשחזר בלי קובץ גיבוי.', okText: 'מחיקת הכל' });
+        if (!ok) return settingsForm();
+        store.wipe();
+        hideLock();
         location.hash = '#/';
         render();
-        toast('החשבון נמחק');
-      } catch (err) { showFormError(form, err.message); }
+        toast('כל הנתונים נמחקו');
+      }
+    });
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const patch = { motherName: form.name.value };
+      if (form.autoLockMin) patch.autoLockMin = Number(form.autoLockMin.value);
+      try { await run(() => store.updateSettings(patch), 'ההגדרות נשמרו'); } catch { return; }
+      closeModal();
+      render();
     });
   });
+}
+
+// ---------- גיבוי ושחזור ----------
+async function downloadBackup() {
+  try {
+    const text = await store.exportBackup();
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `family-cycle-backup-${today()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast(data().pinEnabled ? 'קובץ הגיבוי נשמר (מוצפן בקוד האישי)' : 'קובץ הגיבוי נשמר');
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+function askPinDialog() {
+  return new Promise((resolve) => {
+    openModal(`${modalHead('גיבוי מוצפן')}
+      <form id="ap-form" novalidate>
+        <div class="field"><label for="ap-pin">הזיני את הקוד שהיה פעיל בזמן הגיבוי</label>
+          <input class="input" id="ap-pin" type="password" inputmode="numeric" dir="ltr" autocomplete="off" maxlength="6" autofocus></div>
+        <div class="form-actions"><button class="btn btn-primary grow" type="submit" data-ok>פענוח ושחזור</button>
+          <button class="btn btn-ghost" type="button" data-cancel>ביטול</button></div>
+      </form>`, (m) => {
+      m.querySelector('#ap-form').addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        const v = m.querySelector('#ap-pin').value;
+        closeModal();
+        resolve(v);
+      });
+      m.querySelector('[data-cancel]').onclick = () => { closeModal(); resolve(null); };
+      m.querySelector('[data-action="close-modal"]').onclick = (e) => { e.stopPropagation(); closeModal(); resolve(null); };
+    });
+  });
+}
+
+function pickRestore() {
+  const input = document.getElementById('restore-file');
+  input.value = '';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    const ok = await confirmDialog({
+      title: 'שחזור מגיבוי',
+      text: 'השחזור יחליף את כל הנתונים שנמצאים כרגע במכשיר בנתונים מקובץ הגיבוי. להמשיך?',
+      okText: 'שחזור', danger: false,
+    });
+    if (!ok) return;
+    try {
+      const done = await store.importBackup(await file.text(), askPinDialog);
+      if (!done) return;
+      state.current = null;
+      location.hash = '#/';
+      render();
+      toast('הנתונים שוחזרו');
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+  input.click();
 }
 
 // ======================================================================
@@ -870,9 +1069,12 @@ function accountDeleteForm() {
 function closeMenu() { state.menuOpen = false; }
 
 async function onAction(action, el) {
+  if (action !== 'menu' && state.menuOpen) {
+    state.menuOpen = false;
+    const pop = document.querySelector('.menu-pop');
+    if (pop) pop.hidden = true;
+  }
   switch (action) {
-    case 'reload': return render();
-    case 'auth-tab': state.authTab = el.dataset.tab; return renderAuth();
     case 'menu': {
       state.menuOpen = !state.menuOpen;
       const pop = document.querySelector('.menu-pop');
@@ -899,7 +1101,7 @@ async function onAction(action, el) {
       });
       if (!ok) return;
       try {
-        await api('DELETE', `/api/daughters/${state.current.daughter.id}/cycles/${c.id}`);
+        await store.deleteCycle(state.current.daughter.id, c.id);
         toast('המחזור נמחק');
         render();
       } catch (e) { toast(e.message, true); }
@@ -920,27 +1122,24 @@ async function onAction(action, el) {
       document.querySelector(`[data-day="${state.selectedDay}"]`)?.focus();
       return;
     case 'close-modal': return closeModal();
-    case 'logout':
-      try { await api('POST', '/api/auth/logout'); } catch { /* ממשיכים בכל מקרה */ }
-      state.user = null;
-      state.current = null;
-      location.hash = '#/';
-      return render();
+    case 'lock-now': return lockNow();
+    case 'settings': return settingsForm();
+    case 'backup': return downloadBackup();
+    case 'restore': return pickRestore();
     case 'demo-load':
-      try { await api('POST', '/api/demo'); toast('נתוני ההדגמה נטענו'); location.hash = '#/'; render(); } catch (e) { toast(e.message, true); }
+      try { await store.loadDemo(today()); toast('נתוני ההדגמה נטענו'); location.hash = '#/'; render(); } catch (e) { toast(e.message, true); }
       return;
     case 'demo-delete': {
       const ok = await confirmDialog({ title: 'מחיקת נתוני הדגמה', text: 'למחוק את כל פרופילי ההדגמה ונתוניהם? הנתונים שהזנת בעצמך לא יימחקו.' });
       if (!ok) return;
       try {
-        await api('DELETE', '/api/demo');
+        await store.deleteDemo();
         toast('נתוני ההדגמה נמחקו');
         if (state.current?.daughter.isDemo) location.hash = '#/';
         render();
       } catch (e) { toast(e.message, true); }
       return;
     }
-    case 'account-delete': closeMenu(); return accountDeleteForm();
   }
 }
 
@@ -989,13 +1188,10 @@ window.addEventListener('hashchange', () => { closeModal(); render(); window.scr
 // ======================================================================
 // הפעלה
 // ======================================================================
-(async function boot() {
-  try {
-    const me = await api('GET', '/api/me');
-    state.user = me.user || null;
-    state.hasDemo = !!me.hasDemo;
-  } catch {
-    state.user = null;
-  }
-  render();
-})();
+store.init();
+render();
+
+// עבודה גם בלי חיבור לרשת, והתקנה במסך הבית
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(() => { /* לא חובה */ });
+}

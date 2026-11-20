@@ -1,5 +1,5 @@
 // נתוני הדגמה: נוצרים יחסית להיום, ומסומנים is_demo כדי שאפשר יהיה למחוק אותם בלחיצה.
-import { addDays, sortByStart } from '../public/calc.js';
+import { addDays } from './calc.js';
 
 function buildCycles(today, lengths, bleeds, lastStartAgo, notes = {}) {
   // בונים אחורה מהמחזור האחרון
@@ -31,13 +31,4 @@ export function demoFamily(today) {
       cycles: [],
     },
   ];
-}
-
-export function loadDemo(store, userId, today) {
-  return store.tx(() => {
-    for (const { daughter, cycles } of demoFamily(today)) {
-      const id = store.createDaughter(userId, { ...daughter, photo: null }, true);
-      for (const c of sortByStart(cycles)) store.createCycle(userId, id, c, true);
-    }
-  });
 }

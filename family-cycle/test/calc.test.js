@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   analyze, validateCycle, bleedDays, diffDays, addDays, isValidDate, ageFrom,
-} from '../public/calc.js';
+} from '../calc.js';
 
 test('ספירת ימים חוצה שעון קיץ וסוף שנה', () => {
   assert.equal(diffDays('2026-03-25', '2026-03-29'), 4); // מעבר לשעון קיץ בישראל
