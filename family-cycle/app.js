@@ -407,6 +407,7 @@ function renderHome() {
       </div>
       <button class="btn btn-primary" data-action="add-daughter">${icon('plus')}הוספת בת</button>
     </section>
+    ${installBanner()}
     ${store.hasDemo() ? `
     <div class="demo-banner">${icon('sparkle')}
       <span class="grow">יש כאן פרופילי הדגמה מגרסה קודמת. אפשר למחוק אותם, והנתונים שהזנת בעצמך יישארו.</span>
@@ -1159,6 +1160,11 @@ async function onAction(action, el) {
       return;
     case 'close-modal': return closeModal();
     case 'lock-now': return lockNow();
+    case 'install': return installApp();
+    case 'install-later':
+      try { localStorage.setItem('family-cycle:install-later', String(Date.now())); } catch { /* לא חובה */ }
+      installEvt = null;
+      return render();
     case 'settings': return settingsForm();
     case 'backup': return downloadBackup();
     case 'restore': return pickRestore();
@@ -1221,6 +1227,50 @@ window.addEventListener('hashchange', () => { closeModal(); render(); window.scr
 // ======================================================================
 // הפעלה
 // ======================================================================
+// ======================================================================
+// התקנה כאפליקציה (אנדרואיד / Chrome)
+// ======================================================================
+let installEvt = null;
+const isStandalone = () =>
+  window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+function installBanner() {
+  if (!installEvt || isStandalone()) return '';
+  return `
+    <div class="demo-banner install-banner">${icon('download')}
+      <span class="grow"><strong>התקנה כאפליקציה בטלפון</strong><br>
+        <span class="small">האפליקציה תיפתח ממסך הבית כמו אפליקציה רגילה, גם בלי אינטרנט.</span></span>
+      <button class="btn btn-primary btn-sm" data-action="install">התקנה</button>
+      <button class="btn btn-ghost btn-sm" data-action="install-later">לא עכשיו</button>
+    </div>`;
+}
+
+async function installApp() {
+  if (!installEvt) return;
+  const evt = installEvt;
+  installEvt = null;
+  try {
+    await evt.prompt();
+    await evt.userChoice;
+  } catch { /* הדפדפן סירב */ }
+  render();
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  let later = 0;
+  try { later = Number(localStorage.getItem('family-cycle:install-later')) || 0; } catch { /* לא חובה */ }
+  if (Date.now() - later < 7 * 86400000) return; // "לא עכשיו" – שקט לשבוע
+  installEvt = e;
+  // מציירים מחדש רק כשאין מסך נעילה או חלון פתוח, כדי לא לקטוע הקלדה
+  if (!store.isLocked() && $lock.hidden && !$modalRoot.innerHTML && route().name === 'home') render();
+});
+window.addEventListener('appinstalled', () => {
+  installEvt = null;
+  toast('האפליקציה הותקנה במסך הבית');
+  if (!store.isLocked() && $lock.hidden && !$modalRoot.innerHTML) render();
+});
+
 store.init();
 render();
 

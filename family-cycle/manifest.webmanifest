@@ -4,6 +4,7 @@
   "description": "מעקב מחזור נפרד לכל אחת מהבנות. כל המידע נשמר רק במכשיר.",
   "lang": "he",
   "dir": "rtl",
+  "id": "./index.html",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
