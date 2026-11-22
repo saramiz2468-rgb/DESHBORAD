@@ -1,0 +1,37 @@
+{
+  "name": "tahara-platform",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "TAHARA – personal cycle, family-purity and fertility tracking (commercial platform).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:web": "npm run dev -w @tahara/web",
+    "dev:admin": "npm run dev -w @tahara/admin",
+    "build": "npm run build -w @tahara/web && npm run build -w @tahara/admin",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:e2e": "playwright test --trace off",
+    "verify:prototype": "node scripts/verify-prototype.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run verify:prototype && npm run format:check && npm run lint && npm run typecheck && npm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@playwright/test": "1.63.0",
+    "eslint": "^9.39.0",
+    "eslint-config-next": "16.4.6",
+    "prettier": "^3.10.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^5.1.1"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "extends": "@tahara/config/tsconfig.base.json",
+  "compilerOptions": { "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo" },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

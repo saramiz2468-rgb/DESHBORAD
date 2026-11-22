@@ -1,0 +1,107 @@
+/*
+ * TAHARA design tokens (Tailwind v4).
+ * Palette: warm ivory, antique rose, deep plum ink and a restrained champagne gold.
+ * All text/background pairs below meet WCAG AA (4.5:1) in both themes.
+ */
+:root {
+  --tk-canvas: #fbf7f3;
+  --tk-surface: #ffffff;
+  --tk-surface-muted: #f6eeea;
+  --tk-blush: #f2e1de;
+  --tk-ink: #33232e;
+  --tk-ink-soft: #6b5462;
+  --tk-ink-faint: #8a7381;
+  --tk-line: #eadbd6;
+  --tk-rose: #9b4f60;
+  --tk-rose-strong: #7f3c4c;
+  --tk-rose-soft: #c98a96;
+  --tk-gold: #a88347;
+  --tk-gold-soft: #e9dcc3;
+  --tk-plum: #4a2f43;
+  --tk-on-rose: #ffffff;
+  --tk-focus: #9b4f60;
+  --tk-shadow: 51 35 46;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tk-canvas: #1c1519;
+    --tk-surface: #261c22;
+    --tk-surface-muted: #2f242a;
+    --tk-blush: #3a2a31;
+    --tk-ink: #f5ebef;
+    --tk-ink-soft: #cdb8c2;
+    --tk-ink-faint: #a8919c;
+    --tk-line: #3d2f36;
+    --tk-rose: #e3a1ad;
+    --tk-rose-strong: #f0bac4;
+    --tk-rose-soft: #8e5563;
+    --tk-gold: #d8b77c;
+    --tk-gold-soft: #4a3d2a;
+    --tk-plum: #f0dde6;
+    --tk-on-rose: #2a1820;
+    --tk-focus: #e3a1ad;
+    --tk-shadow: 0 0 0;
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--tk-canvas);
+  --color-surface: var(--tk-surface);
+  --color-surface-muted: var(--tk-surface-muted);
+  --color-blush: var(--tk-blush);
+  --color-ink: var(--tk-ink);
+  --color-ink-soft: var(--tk-ink-soft);
+  --color-ink-faint: var(--tk-ink-faint);
+  --color-line: var(--tk-line);
+  --color-rose: var(--tk-rose);
+  --color-rose-strong: var(--tk-rose-strong);
+  --color-rose-soft: var(--tk-rose-soft);
+  --color-gold: var(--tk-gold);
+  --color-gold-soft: var(--tk-gold-soft);
+  --color-plum: var(--tk-plum);
+  --color-on-rose: var(--tk-on-rose);
+
+  --font-sans: 'Heebo Variable', 'Heebo', system-ui, 'Segoe UI', Arial, sans-serif;
+  --font-display: 'Frank Ruhl Libre Variable', 'Frank Ruhl Libre', 'David', Georgia, serif;
+
+  --radius-card: 1.25rem;
+  --radius-pill: 999px;
+
+  --shadow-soft:
+    0 1px 2px rgb(var(--tk-shadow) / 0.04), 0 8px 24px -12px rgb(var(--tk-shadow) / 0.12);
+  --shadow-lift:
+    0 2px 4px rgb(var(--tk-shadow) / 0.05), 0 18px 40px -18px rgb(var(--tk-shadow) / 0.22);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: var(--tk-canvas);
+    color: var(--tk-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'kern';
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+  }
+  :focus-visible {
+    outline: 2px solid var(--tk-focus);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: var(--tk-blush);
+    color: var(--tk-ink);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

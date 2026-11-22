@@ -1,0 +1,42 @@
+# NOTE: GitHub Actions only reads workflows from the REPOSITORY ROOT (.github/workflows).
+# This file lives inside tahara-platform/ because stage 1 is restricted to this folder.
+# To activate: copy it to <repo-root>/.github/workflows/tahara-ci.yml (needs approval),
+# or it activates automatically if tahara-platform becomes its own repository
+# (then remove `working-directory` and the `paths` filter, and set TAHARA_STANDALONE=1).
+name: tahara-platform CI
+
+on:
+  push:
+    paths: ['tahara-platform/**', 'tahara/**', 'family-cycle/**', 'legal-system/**']
+  pull_request:
+    paths: ['tahara-platform/**', 'tahara/**', 'family-cycle/**', 'legal-system/**']
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: tahara-platform
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: tahara-platform/.nvmrc
+          cache: npm
+          cache-dependency-path: tahara-platform/package-lock.json
+      - run: npm ci
+      - name: Prototype unchanged
+        run: npm run verify:prototype
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env: { NEXT_TELEMETRY_DISABLED: '1' }
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env: { CI: '1', NEXT_TELEMETRY_DISABLED: '1' }
