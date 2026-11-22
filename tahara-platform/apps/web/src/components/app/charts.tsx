@@ -112,6 +112,7 @@ export function CycleBarChart({
       </figcaption>
       <div className="relative">
         <svg
+          direction="ltr"
           viewBox={`0 0 ${W} ${H}`}
           className="h-auto w-full"
           role="img"
@@ -249,6 +250,7 @@ export function FertilityChart({ title, days }: { title: string; days: Fertility
       </figcaption>
       <div className="relative">
         <svg
+          direction="ltr"
           viewBox={`0 0 ${W} ${H}`}
           className="h-auto w-full"
           role="img"
