@@ -1,8 +1,8 @@
-import { APP_FEATURES } from '@/config/features';
+import { ALL_ROUTES } from '@/config/navigation';
 
-/** Routes that will show personal data (and the auth flow). Never cacheable. */
+/** Routes that show personal data (and the auth flow). Never cacheable. */
 export const PRIVATE_ROUTE_PREFIXES: readonly string[] = [
-  ...APP_FEATURES.map((f) => f.href),
+  ...ALL_ROUTES.map((r) => r.href),
   '/login',
   '/auth',
   '/api',

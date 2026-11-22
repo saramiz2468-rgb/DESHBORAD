@@ -11,10 +11,18 @@ test('service worker and browser storage never hold pages or personal data', asy
   // Reload so the now-active worker controls the page, then browse the private area.
   await page.reload();
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
-  for (const r of ['/today', '/calendar', '/halacha', '/settings', '/login', '/legal/privacy']) {
+  for (const r of ['/today', '/calendar', '/tahara', '/settings', '/login', '/legal/privacy']) {
     await page.goto(WEB + r);
     await page.waitForLoadState('networkidle');
   }
+  // Enter personal data in the simulation, then audit storage.
+  await page.goto(WEB + '/today');
+  await page.getByLabel('תרחיש:').selectOption({ label: 'בשבעה נקיים' });
+  await page.getByRole('button', { name: 'תיעוד המחזור האחרון' }).waitFor({ state: 'detached' });
+  await page.getByRole('button', { name: 'תיעוד תסמין' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'כאבי ראש' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'שמירה' }).click();
+  await page.waitForLoadState('networkidle');
 
   const audit = await page.evaluate(async () => {
     const names = await caches.keys();

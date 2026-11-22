@@ -30,13 +30,13 @@ describe('architecture boundaries (ESLint)', () => {
     expect(
       await ruleIds(
         "import x from '../halacha-engine/rules';\nexport default x;\n",
-        'packages/core/medical-engine/a.ts',
+        'packages/core/src/medical-engine/a.ts',
       ),
     ).toContain('no-restricted-imports');
     expect(
       await ruleIds(
         "import x from '../medical-engine/predict';\nexport default x;\n",
-        'packages/core/halacha-engine/a.ts',
+        'packages/core/src/halacha-engine/a.ts',
       ),
     ).toContain('no-restricted-imports');
   });

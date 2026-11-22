@@ -5,7 +5,7 @@ import { baseSecurityHeaders } from '@tahara/security';
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@tahara/ui', '@tahara/security'],
+  transpilePackages: ['@tahara/ui', '@tahara/security', '@tahara/core'],
   // Monorepo root, so Vercel/Turbopack trace files from packages/*.
   outputFileTracingRoot: path.join(import.meta.dirname, '../..'),
   turbopack: { root: path.join(import.meta.dirname, '../..') },

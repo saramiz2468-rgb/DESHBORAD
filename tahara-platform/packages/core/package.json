@@ -1,0 +1,16 @@
+{
+  "name": "@tahara/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./calendar": "./src/calendar/index.ts",
+    "./medical-engine": "./src/medical-engine/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@tahara/config": "*"
+  }
+}

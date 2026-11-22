@@ -56,11 +56,11 @@ export default defineConfig([
     },
   },
   {
-    files: ['packages/core/medical-engine/**'],
+    files: ['packages/core/src/medical-engine/**'],
     rules: engineBoundary(['**/halacha-engine/**', '@tahara/core/halacha*']),
   },
   {
-    files: ['packages/core/halacha-engine/**'],
+    files: ['packages/core/src/halacha-engine/**'],
     rules: engineBoundary(['**/medical-engine/**', '@tahara/core/medical*']),
   },
   {
@@ -71,6 +71,8 @@ export default defineConfig([
       '@tahara/core/*',
       '**/features/cycles/**',
       '**/features/halacha/**',
+      '**/features/tahara/**',
+      '**/features/fertility/**',
     ]),
   },
   { files: ['scripts/**', '**/*.config.*', 'tests/**'], rules: { 'no-console': 'off' } },

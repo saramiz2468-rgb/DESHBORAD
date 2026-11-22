@@ -21,6 +21,14 @@
   --tk-on-rose: #ffffff;
   --tk-focus: #9b4f60;
   --tk-shadow: 51 35 46;
+  /* Calendar event colors – validated (dataviz validate_palette.js, light, all checks pass). */
+  --ev-bleed: #c4506b;
+  --ev-hefsek: #8a72c8;
+  --ev-clean: #349c6c;
+  --ev-tevila: #bd7016;
+  --ev-fertile: #2087c4;
+  --ev-ovulation: #6b3fa8;
+  --ev-veset: #a5552e;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,6 +50,14 @@
     --tk-on-rose: #2a1820;
     --tk-focus: #e3a1ad;
     --tk-shadow: 0 0 0;
+    /* Dark: own steps, validated against #261c22. Ovulation/fertile ΔE 6.3 (deutan) → shape-encoded. */
+    --ev-bleed: #d4627c;
+    --ev-hefsek: #8f7ad6;
+    --ev-clean: #3fa97a;
+    --ev-tevila: #c8812a;
+    --ev-fertile: #3a90d8;
+    --ev-ovulation: #a85cb0;
+    --ev-veset: #b86a3e;
   }
 }
 
@@ -103,5 +119,36 @@
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes toast-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes fade-up {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
   }
 }

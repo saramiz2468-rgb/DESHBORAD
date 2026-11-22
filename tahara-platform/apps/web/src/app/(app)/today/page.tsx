@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { FeatureScreen } from '@/components/FeatureScreen';
+import { HomeScreen } from '@/features/home/HomeScreen';
 
 export const metadata: Metadata = { title: 'היום שלי' };
 
 export default function Page() {
-  return <FeatureScreen feature="today" />;
+  return <HomeScreen />;
 }

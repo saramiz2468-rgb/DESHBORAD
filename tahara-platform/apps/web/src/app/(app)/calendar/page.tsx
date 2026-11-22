@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { FeatureScreen } from '@/components/FeatureScreen';
+import { CalendarScreen } from '@/features/calendar/CalendarScreen';
 
 export const metadata: Metadata = { title: 'לוח שנה' };
 
 export default function Page() {
-  return <FeatureScreen feature="calendar" />;
+  return <CalendarScreen />;
 }

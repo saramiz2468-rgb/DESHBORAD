@@ -3,52 +3,60 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@tahara/ui';
-import { APP_FEATURES, PRIMARY_NAV } from '@/config/features';
-import { NavIcon } from './NavIcon';
+import { MORE_NAV, PRIMARY_NAV, SIDEBAR_NAV } from '@/config/navigation';
+import { Icon } from './Icon';
 
-function useActive() {
+function useIsActive() {
   const pathname = usePathname();
-  return (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  return (href: string) => {
+    if (href === '/more')
+      return pathname === '/more' || MORE_NAV.some((m) => pathname.startsWith(m.href));
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 }
 
 export function SideNav() {
-  const isActive = useActive();
+  const isActive = useIsActive();
   return (
-    <nav aria-label="ניווט באפליקציה" className="space-y-1">
-      {APP_FEATURES.map((f) => (
-        <Link
-          key={f.key}
-          href={f.href}
-          aria-current={isActive(f.href) ? 'page' : undefined}
-          className={cn(
-            'flex min-h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-colors',
-            isActive(f.href)
-              ? 'bg-blush font-medium text-rose-strong'
-              : 'text-ink-soft hover:bg-surface-muted hover:text-ink',
-          )}
-        >
-          <NavIcon name={f.key} className="size-5" />
-          {f.label}
-        </Link>
+    <nav aria-label="ניווט באפליקציה" className="space-y-0.5">
+      {SIDEBAR_NAV.map((item, i) => (
+        <div key={item.href}>
+          {i === 4 ? (
+            <p className="mt-5 mb-2 px-3 text-[0.7rem] tracking-wide text-ink-faint">עוד</p>
+          ) : null}
+          <Link
+            href={item.href}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+            className={cn(
+              'flex min-h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-colors',
+              isActive(item.href)
+                ? 'bg-blush font-medium text-rose-strong'
+                : 'text-ink-soft hover:bg-surface-muted hover:text-ink',
+            )}
+          >
+            <Icon name={item.icon} />
+            {item.label}
+          </Link>
+        </div>
       ))}
     </nav>
   );
 }
 
 export function BottomNav() {
-  const isActive = useActive();
+  const isActive = useIsActive();
   return (
     <nav
       aria-label="ניווט ראשי"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
     >
       <ul className="mx-auto grid max-w-lg grid-cols-5">
-        {PRIMARY_NAV.map((f) => {
-          const active = isActive(f.href);
+        {PRIMARY_NAV.map((item) => {
+          const active = isActive(item.href);
           return (
-            <li key={f.key}>
+            <li key={item.href}>
               <Link
-                href={f.href}
+                href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex min-h-16 flex-col items-center justify-center gap-1 text-[0.72rem]',
@@ -61,9 +69,9 @@ export function BottomNav() {
                     active && 'bg-blush',
                   )}
                 >
-                  <NavIcon name={f.key} className="size-5" />
+                  <Icon name={item.icon} />
                 </span>
-                {f.label}
+                {item.label}
               </Link>
             </li>
           );
