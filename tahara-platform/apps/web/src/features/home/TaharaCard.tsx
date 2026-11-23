@@ -9,7 +9,8 @@ import { useDerived } from '@/state/derived';
 
 /** Halachic DOCUMENTATION status on the home screen. Never a ruling. */
 export function TaharaCard() {
-  const { tahara: t, fmt } = useDerived();
+  const { tahara: t, fmt, vestot } = useDerived();
+  const nextPrishah = vestot.upcoming[0];
   const { open } = useSheets();
 
   const header = (
@@ -27,6 +28,21 @@ export function TaharaCard() {
       </Link>
     </div>
   );
+  const prishahLine = nextPrishah ? (
+    <Link
+      href="/tahara/prishah"
+      className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-[var(--ev-veset)]/30 px-3 py-2.5 text-sm"
+    >
+      <span className="min-w-0">
+        <span className="block text-xs text-ink-soft">מועד הפרישה הקרוב · טיוטה לבדיקה</span>
+        <span className="block text-ink">
+          {fmt(nextPrishah.hdate, { year: false })} ·{' '}
+          {nextPrishah.onah === 'day' ? 'עונת יום' : 'עונת לילה'}
+        </span>
+      </span>
+      <Icon name="chevron" className="size-4 shrink-0 text-ink-faint" />
+    </Link>
+  ) : null;
 
   if (t.stage === 'none' || t.stage === 'bleeding' || t.stage === 'awaiting-hefsek') {
     const text =
@@ -44,6 +60,7 @@ export function TaharaCard() {
             תיעוד הפסק טהרה
           </Button>
         </div>
+        {prishahLine}
       </Card>
     );
   }
@@ -107,6 +124,7 @@ export function TaharaCard() {
           </div>
         </>
       )}
+      {prishahLine}
     </Card>
   );
 }

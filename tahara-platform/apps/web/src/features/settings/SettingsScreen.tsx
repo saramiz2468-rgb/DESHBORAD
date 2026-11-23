@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Button, Card, Notice, PageHeader } from '@tahara/ui';
+import { Button, Card, PageHeader } from '@tahara/ui';
 import type { DateDisplay } from '@tahara/core/calendar';
 import { Icon } from '@/components/Icon';
 import { SectionTitle } from '@/components/app/bits';
-import { Field, Segmented, Switch, TextInput } from '@/components/app/fields';
+import { Field, Segmented, TextInput } from '@/components/app/fields';
 import { useSheets } from '@/features/forms/ActionSheets';
+import { HalachaSettingsSection } from './HalachaSettings';
 import { useTahara } from '@/state/store';
 
 export function SettingsScreen() {
@@ -114,43 +115,7 @@ export function SettingsScreen() {
         </Card>
       </section>
 
-      <section>
-        <SectionTitle>הגדרות הלכתיות</SectionTitle>
-        <Card className="space-y-4">
-          <Notice tone="caution">
-            אפשרויות המנהג יוצגו כאן רק אחרי שיאושרו על ידי גורם הלכתי מוסמך. לא נוספו הגדרות שלא
-            נבדקו.
-          </Notice>
-          <Field label="מנהג">
-            {(p) => (
-              <select
-                {...p}
-                disabled
-                className="block min-h-12 w-full rounded-2xl border border-line bg-surface-muted px-4 text-ink-faint"
-              >
-                <option>אין עדיין מנהגים מאושרים</option>
-              </select>
-            )}
-          </Field>
-          <Switch
-            label="עונה בינונית"
-            description="ממתין לאישור"
-            checked={false}
-            disabled
-            onChange={() => undefined}
-          />
-          <Switch
-            label="אור זרוע"
-            description="ממתין לאישור"
-            checked={false}
-            disabled
-            onChange={() => undefined}
-          />
-          <p className="text-xs text-ink-faint">
-            התאמות אישיות לפי הנחיית רב או יועצת יתאפשרו יחד עם המנוע ההלכתי.
-          </p>
-        </Card>
-      </section>
+      <HalachaSettingsSection />
 
       <section>
         <SectionTitle>תצוגה</SectionTitle>
@@ -184,17 +149,6 @@ export function SettingsScreen() {
             >
               לתזכורות <Icon name="chevron" className="size-4" />
             </Link>
-          </div>
-          <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
-            <div>
-              <p className="text-[0.95rem] text-ink">עיר לחישוב זריחה ושקיעה</p>
-              <p className="text-xs text-ink-faint">
-                בחירה מרשימת ערים, בלי מיקום GPS. תתווסף יחד עם המנוע ההלכתי.
-              </p>
-            </div>
-            <Button variant="ghost" disabled>
-              בקרוב
-            </Button>
           </div>
         </Card>
       </section>

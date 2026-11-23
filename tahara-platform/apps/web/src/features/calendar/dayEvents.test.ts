@@ -37,7 +37,24 @@ describe('dayInfo', () => {
     expect([...dayInfo('2026-11-25', data, p, today).kinds]).toContain('tevila');
   });
 
-  it('marks estimates only in the future, and never vestot', () => {
+  it('marks separation onot only from halachic engine results', () => {
+    const pr = [
+      {
+        hdate: '2026-12-13',
+        onah: 'day' as const,
+        window: {
+          from: { date: '2026-12-13', time: '06:30' },
+          to: { date: '2026-12-13', time: '16:40' },
+        },
+        entries: [] as never[],
+      },
+    ];
+    pr[0]!.entries = [{ kind: 'beinonit' } as never];
+    expect(dayInfo('2026-12-13', data, p, today, pr).kinds.has('veset')).toBe(true);
+    expect(dayInfo('2026-12-13', data, p, today).kinds.has('veset')).toBe(false);
+  });
+
+  it('marks estimates only in the future, and never vestot without engine results', () => {
     expect(p.nextStart).toBe('2026-12-12');
     expect([...dayInfo('2026-12-12', data, p, today).kinds]).toContain('expected');
     for (let d = 1; d <= 30; d++) {

@@ -77,7 +77,8 @@ export const MORE_NAV: readonly NavItem[] = [
 ];
 
 export const SUB_ROUTES: readonly NavItem[] = [
-  { href: '/tahara/vestot', label: 'מעקב וסתות', icon: 'moon', availability: 'simulation' },
+  { href: '/tahara/prishah', label: 'ימי פרישה', icon: 'moon', availability: 'simulation' },
+  { href: '/tahara/vestot', label: 'ראיות ווסתות', icon: 'moon', availability: 'simulation' },
 ];
 
 export const ALL_ROUTES: readonly NavItem[] = [...PRIMARY_NAV, ...MORE_NAV, ...SUB_ROUTES];

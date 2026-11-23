@@ -6,6 +6,7 @@ const APP_ROUTES = [
   '/calendar',
   '/track',
   '/tahara',
+  '/tahara/prishah',
   '/tahara/vestot',
   '/more',
   '/fertility',
@@ -52,11 +53,10 @@ test.describe('web – Hebrew, RTL, mobile-first', () => {
     await expect(page.getByRole('heading', { name: 'המחזור שלי' })).toBeVisible();
   });
 
-  test('vestot: no halachic calculation is shown', async ({ page }) => {
+  test('vestot: every halachic result is marked as a draft for review', async ({ page }) => {
     await page.goto(WEB + '/tahara/vestot');
-    await expect(page.getByText('החישובים עדיין לא פעילים')).toBeVisible();
-    await expect(page.locator('main').getByText('גורם הלכתי מוסמך').first()).toBeVisible();
-    await expect(page.getByText('לא פעיל', { exact: true })).toHaveCount(5);
+    await expect(page.getByText('טיוטה לבדיקה הלכתית')).toBeVisible();
+    await expect(page.getByText('ממתין לאישור').first()).toBeVisible();
   });
 
   test('login and purchase stay disabled', async ({ page }) => {
@@ -211,4 +211,70 @@ test('a full reload clears all simulated data (nothing persisted)', async ({ pag
   await expect(page.getByRole('heading', { name: 'המחזור שלי' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: 'ברוכה הבאה' })).toBeVisible();
+});
+
+test.describe('web – halachic engine (draft for review)', () => {
+  test('prishah needs a chosen minhag – nothing is assumed', async ({ page }) => {
+    await page.goto(WEB + '/tahara/prishah');
+    await expect(page.getByRole('heading', { name: 'בחרי את המנהג ההלכתי שלך' })).toBeVisible();
+  });
+
+  test('upcoming prishah days with explanation, source and minhag', async ({ page }) => {
+    await page.goto(WEB + '/tahara/prishah');
+    await page.getByLabel('תרחיש:').selectOption({ label: 'מעקב מחזור' });
+    await expect(page.getByText('טיוטה לבדיקה הלכתית')).toBeVisible();
+    await expect(page.getByText('מועדי פרישה קרובים')).toBeVisible();
+    await expect(page.getByLabel('סיבות הפרישה').first()).toBeVisible();
+    await page.getByRole('button', { name: 'הסבר הלכתי' }).first().click();
+    const sheet = page.getByRole('dialog', { name: 'הסבר הלכתי' });
+    await expect(sheet.getByText('מקור').first()).toBeVisible();
+    await expect(sheet.getByText('יו״ד').first()).toBeVisible();
+    await expect(sheet.getByText('מנהג ספרדי').first()).toBeVisible();
+    await expect(sheet.getByText('ממתין לאישור גורם הלכתי מוסמך').first()).toBeVisible();
+  });
+
+  test('choosing a minhag in settings, then recording a sighting, recalculates', async ({
+    page,
+  }) => {
+    await page.goto(WEB + '/settings');
+    await page.getByRole('radio', { name: 'מנהג אשכנזי' }).click();
+    await expect(page.getByText('הגדרות מוצעות, טעונות אימות')).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'חומרת אור זרוע' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await page.locator('nav a[href="/tahara"]:visible').first().click();
+    await page.getByRole('link', { name: 'ימי פרישה' }).click();
+    await page.getByRole('button', { name: 'ראייה', exact: true }).click();
+    const d = page.getByRole('dialog', { name: 'תיעוד ראייה' });
+    await d.getByLabel('שעה').fill('11:00');
+    await expect(d.locator('strong', { hasText: 'עונת יום' })).toBeVisible();
+    await d.getByRole('button', { name: 'שמירת ראייה' }).click();
+    await expect(page.getByText('הראייה נשמרה. המועדים חושבו מחדש')).toBeVisible();
+    await expect(page.getByText('אור זרוע').first()).toBeVisible();
+  });
+
+  test('a complex case is not computed and asks for personal guidance', async ({ page }) => {
+    await page.goto(WEB + '/settings');
+    await page.getByRole('radio', { name: 'מנהג ספרדי' }).click();
+    await page.locator('nav a[href="/tahara"]:visible').first().click();
+    await page.getByRole('link', { name: 'ראיות ווסתות' }).click();
+    await page.getByRole('button', { name: 'ראייה', exact: true }).click();
+    const d = page.getByRole('dialog', { name: 'תיעוד ראייה' });
+    await d.getByLabel('שעה').fill('11:00');
+    await d.getByRole('radio', { name: 'כתם' }).click();
+    await expect(d.getByText('המקרה דורש בירור הלכתי אישי')).toBeVisible();
+    await d.getByRole('button', { name: 'שמירת ראייה' }).click();
+    await expect(page.getByText('לא נכלל בחישוב · דורש בירור הלכתי')).toBeVisible();
+  });
+
+  test('city selection changes sunrise and sunset (no GPS)', async ({ page }) => {
+    await page.goto(WEB + '/settings');
+    await page.getByRole('radio', { name: 'מנהג ספרדי' }).click();
+    const city = page.getByLabel('עיר לחישוב זריחה ושקיעה');
+    const before = await page.getByText(/היום ב.*שקיעה/).innerText();
+    await city.selectOption({ label: 'אילת' });
+    await expect(page.getByText(/היום באילת/)).toBeVisible();
+    expect(await page.getByText(/היום באילת/).innerText()).not.toBe(before);
+  });
 });

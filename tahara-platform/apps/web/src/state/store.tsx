@@ -22,8 +22,10 @@ import {
 import { todayInJerusalem, type ISODate } from '@tahara/core/calendar';
 import type {
   Bedika,
+  CalcHistoryEntry,
   ChecklistItem,
   FertilityLog,
+  HalachaPrefs,
   Hefsek,
   Period,
   Preferences,
@@ -36,7 +38,8 @@ import type {
 import { emptyData } from './defaults';
 import { buildScenario, type ScenarioKey } from './scenarios';
 
-type Collection = 'periods' | 'symptomLogs' | 'fertilityLogs' | 'hefseks' | 'bedikot' | 'tevilot';
+type Collection =
+  'periods' | 'symptomLogs' | 'fertilityLogs' | 'hefseks' | 'bedikot' | 'tevilot' | 'sightings';
 type ItemOf<C extends Collection> = TaharaData[C][number];
 
 type Action =
@@ -45,6 +48,7 @@ type Action =
   | { type: 'preferences'; patch: Partial<Preferences> }
   | { type: 'reminder'; key: ReminderKey; patch: Partial<ReminderSetting> }
   | { type: 'checklist'; items: ChecklistItem[] }
+  | { type: 'halacha'; patch: Partial<HalachaPrefs> }
   | { type: 'replace'; data: TaharaData };
 
 function reducer(state: TaharaData, a: Action): TaharaData {
@@ -63,6 +67,9 @@ function reducer(state: TaharaData, a: Action): TaharaData {
       const list = state[a.collection] as Array<{ id: string }>;
       const next = { ...state, [a.collection]: list.filter((x) => x.id !== a.id) };
       // Deleting a hefsek removes its own documentation (same domain only).
+      // Deleting a period also removes the sighting that was recorded together with it.
+      if (a.collection === 'periods')
+        next.sightings = state.sightings.filter((x) => x.periodId !== a.id);
       if (a.collection === 'hefseks') {
         next.bedikot = state.bedikot.filter((b) => b.hefsekId !== a.id);
         next.tevilot = state.tevilot.filter((t) => t.hefsekId !== a.id);
@@ -78,6 +85,8 @@ function reducer(state: TaharaData, a: Action): TaharaData {
       };
     case 'checklist':
       return { ...state, checklist: a.items };
+    case 'halacha':
+      return { ...state, halacha: { ...state.halacha, ...a.patch } };
     case 'replace':
       return a.data;
   }
@@ -100,6 +109,9 @@ interface StoreValue {
   setPreferences(patch: Partial<Preferences>): void;
   setReminder(key: ReminderKey, patch: Partial<ReminderSetting>): void;
   setChecklist(items: ChecklistItem[]): void;
+  setHalacha(patch: Partial<HalachaPrefs>): void;
+  calcHistory: CalcHistoryEntry[];
+  addCalcHistory(entry: Omit<CalcHistoryEntry, 'id' | 'at'>): void;
   loadScenario(key: ScenarioKey): void;
   resetAll(): void;
   toasts: Toast[];
@@ -122,6 +134,7 @@ export function TaharaStoreProvider({ children }: { children: ReactNode }) {
   const [data, dispatch] = useReducer(reducer, undefined, emptyData);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [drafts, setDrafts] = useState<Record<string, unknown>>({});
+  const [calcHistory, setCalcHistory] = useState<CalcHistoryEntry[]>([]);
   const toastId = useRef(0);
   const dataRef = useRef(data);
   useEffect(() => {
@@ -156,14 +169,22 @@ export function TaharaStoreProvider({ children }: { children: ReactNode }) {
       setPreferences: (patch) => dispatch({ type: 'preferences', patch }),
       setReminder: (key, patch) => dispatch({ type: 'reminder', key, patch }),
       setChecklist: (items) => dispatch({ type: 'checklist', items }),
+      setHalacha: (patch) => dispatch({ type: 'halacha', patch }),
+      calcHistory,
+      addCalcHistory: (entry) =>
+        setCalcHistory((h) =>
+          [{ ...entry, id: crypto.randomUUID(), at: new Date().toISOString() }, ...h].slice(0, 30),
+        ),
       loadScenario(key) {
         setScenario(key);
         setDrafts({});
+        setCalcHistory([]);
         dispatch({ type: 'replace', data: buildScenario(key, today) });
       },
       resetAll() {
         setScenario('new');
         setDrafts({});
+        setCalcHistory([]);
         dispatch({ type: 'replace', data: emptyData() });
       },
       toasts,
@@ -178,7 +199,7 @@ export function TaharaStoreProvider({ children }: { children: ReactNode }) {
           return next;
         }),
     }),
-    [data, today, scenario, toasts, notify, dismiss, drafts],
+    [data, today, scenario, toasts, notify, dismiss, drafts, calcHistory],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -191,3 +212,4 @@ export function useTahara(): StoreValue {
 }
 
 export type { Bedika, FertilityLog, Hefsek, Period, SymptomLog, Tevila };
+export type { Sighting } from '@/domain/types';

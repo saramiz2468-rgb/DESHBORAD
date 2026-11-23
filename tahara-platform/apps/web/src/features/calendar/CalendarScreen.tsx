@@ -29,7 +29,7 @@ const DISPLAY_OPTIONS: ReadonlyArray<{ value: DateDisplay; label: string }> = [
 
 export function CalendarScreen() {
   const { data, today } = useTahara();
-  const { prediction } = useDerived();
+  const { prediction, vestot } = useDerived();
   const [month, setMonth] = useState<ISODate>(startOfMonth(today));
   const [display, setDisplay] = useState<DateDisplay>(data.preferences.dateDisplay);
   const [selected, setSelected] = useState<ISODate | null>(null);
@@ -37,9 +37,9 @@ export function CalendarScreen() {
   const weeks = useMemo(() => monthGrid(month), [month]);
   const infos = useMemo(() => {
     const m = new Map<ISODate, DayInfo>();
-    for (const d of weeks.flat()) m.set(d, dayInfo(d, data, prediction, today));
+    for (const d of weeks.flat()) m.set(d, dayInfo(d, data, prediction, today, vestot.prishot));
     return m;
-  }, [weeks, data, prediction, today]);
+  }, [weeks, data, prediction, today, vestot]);
 
   const inMonth = (d: ISODate) => d.slice(0, 7) === month.slice(0, 7);
   const monthDays = weeks.flat().filter(inMonth);
@@ -157,7 +157,11 @@ export function CalendarScreen() {
 
       <DaySheet
         date={selected}
-        info={selected ? (infos.get(selected) ?? dayInfo(selected, data, prediction, today)) : null}
+        info={
+          selected
+            ? (infos.get(selected) ?? dayInfo(selected, data, prediction, today, vestot.prishot))
+            : null
+        }
         onClose={() => setSelected(null)}
       />
     </div>
@@ -221,7 +225,15 @@ function DayCell({
         {k.has('clean') ? <Dot kind="clean" /> : null}
         {k.has('tevila') ? <Dot kind="tevila" shape="ring" /> : null}
         {k.has('ovulation') ? <Dot kind="ovulation" shape="diamond" /> : null}
+        {k.has('veset') ? <Dot kind="veset" shape="square" /> : null}
+        {k.has('kavua') ? <Dot kind="kavua" shape="square-ring" /> : null}
       </span>
+      {k.has('sighting') ? (
+        <span
+          aria-hidden
+          className="absolute end-1 top-1 size-0 border-x-[4px] border-t-[6px] border-x-transparent border-t-[var(--ev-sighting)]"
+        />
+      ) : null}
       {k.has('fertile') ? (
         <span
           aria-hidden
@@ -232,8 +244,18 @@ function DayCell({
   );
 }
 
-function Dot({ kind, shape = 'dot' }: { kind: EventKind; shape?: 'dot' | 'ring' | 'diamond' }) {
+function Dot({
+  kind,
+  shape = 'dot',
+}: {
+  kind: EventKind;
+  shape?: 'dot' | 'ring' | 'diamond' | 'square' | 'square-ring';
+}) {
   const color = `var(--ev-${kind})`;
+  if (shape === 'square')
+    return <span className="size-2 rounded-[2px]" style={{ background: color }} />;
+  if (shape === 'square-ring')
+    return <span className="size-2.5 rounded-[2px] border-2" style={{ borderColor: color }} />;
   if (shape === 'ring')
     return <span className="size-2 rounded-full border-2" style={{ borderColor: color }} />;
   if (shape === 'diamond')
@@ -302,8 +324,20 @@ function LegendSwatch({ kind }: { kind: EventKind }) {
       );
     case 'veset':
       return (
-        <span className={cn(box, 'opacity-40')}>
-          <Dot kind="veset" />
+        <span className={box}>
+          <Dot kind="veset" shape="square" />
+        </span>
+      );
+    case 'kavua':
+      return (
+        <span className={box}>
+          <Dot kind="kavua" shape="square-ring" />
+        </span>
+      );
+    case 'sighting':
+      return (
+        <span className={box}>
+          <span className="size-0 border-x-[5px] border-t-[8px] border-x-transparent border-t-[var(--ev-sighting)]" />
         </span>
       );
     default:

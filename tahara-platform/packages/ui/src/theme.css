@@ -29,6 +29,8 @@
   --ev-fertile: #2087c4;
   --ev-ovulation: #6b3fa8;
   --ev-veset: #a5552e;
+  --ev-kavua: #a5552e;
+  --ev-sighting: #7f3c4c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -58,6 +60,8 @@
     --ev-fertile: #3a90d8;
     --ev-ovulation: #a85cb0;
     --ev-veset: #b86a3e;
+    --ev-kavua: #b86a3e;
+    --ev-sighting: #f0bac4;
   }
 }
 

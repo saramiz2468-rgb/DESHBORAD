@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Logo } from '@tahara/ui';
 import { BottomNav, SideNav } from '@/components/AppNav';
 import { SimulationBar } from '@/components/SimulationBar';
+import { HalachaWatcher } from '@/components/app/HalachaWatcher';
 import { Toaster } from '@/components/app/Toaster';
 import { ActionSheetsProvider } from '@/features/forms/ActionSheets';
 import { TaharaStoreProvider } from '@/state/store';
@@ -41,6 +42,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
           <BottomNav />
           <Toaster />
+          <HalachaWatcher />
         </div>
       </ActionSheetsProvider>
     </TaharaStoreProvider>

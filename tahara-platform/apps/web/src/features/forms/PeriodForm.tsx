@@ -38,6 +38,7 @@ interface State {
   symptoms: SymptomKey[];
   otherSymptom: string;
   notes: string;
+  asSighting: boolean;
 }
 
 export function PeriodForm({
@@ -66,6 +67,7 @@ export function PeriodForm({
     symptoms: existing?.symptoms ?? [],
     otherSymptom: existing?.otherSymptom ?? '',
     notes: existing?.notes ?? '',
+    asSighting: existing ? data.sightings.some((x) => x.periodId === existing.id) : true,
   }));
 
   const autoBleed = s.end && s.end >= s.start ? diffDays(s.start, s.end) + 1 : null;
@@ -89,6 +91,22 @@ export function PeriodForm({
       return;
     }
     save('periods', item, existing ? 'המחזור עודכן' : 'המחזור נשמר');
+    // Halachic log: keep the linked sighting in sync (the medical record itself is unchanged).
+    const linked = data.sightings.find((x) => x.periodId === item.id);
+    if (s.asSighting) {
+      save('sightings', {
+        id: linked?.id ?? newId(),
+        date: item.start,
+        time: item.startTime,
+        onahMode: linked?.onahMode ?? (item.startTime ? 'auto' : 'unknown'),
+        kind: linked?.kind ?? 'regular',
+        flags: linked?.flags ?? [],
+        periodId: item.id,
+        notes: linked?.notes,
+      });
+    } else if (linked) {
+      remove('sightings', linked.id, 'הראייה הוסרה מהמעקב ההלכתי');
+    }
     clear();
     onDone();
   }
@@ -186,6 +204,22 @@ export function PeriodForm({
           )}
         </Field>
       ) : null}
+      <label className="flex items-start gap-3 rounded-2xl border border-line px-4 py-3">
+        <input
+          type="checkbox"
+          checked={s.asSighting}
+          onChange={(e) => update({ asSighting: e.target.checked })}
+          className="mt-1 size-5 accent-[var(--tk-rose)]"
+        />
+        <span>
+          <span className="block text-[0.95rem] text-ink">לרשום גם כראייה במעקב ההלכתי</span>
+          <span className="block text-xs text-ink-faint">
+            {s.startTime
+              ? 'העונה תיקבע לפי השעה והעיר שבחרת.'
+              : 'בלי שעה, העונה תסומן כלא ידועה ותצטרכי להשלים אותה.'}
+          </span>
+        </span>
+      </label>
       <Field label="הערות אישיות" optional>
         {(p) => (
           <TextArea
@@ -211,7 +245,7 @@ export function PeriodForm({
           open={confirm}
           onClose={() => setConfirm(false)}
           title="מחיקת מחזור"
-          message="המחזור, כולל התסמינים וההערות שלו, יימחק. אפשר לבטל את המחיקה מההודעה שתופיע."
+          message="המחזור, כולל התסמינים וההערות שלו והראייה שנרשמה איתו, יימחק. אפשר לבטל את המחיקה מההודעה שתופיע."
           confirmLabel="מחיקה"
           danger
           onConfirm={() => {

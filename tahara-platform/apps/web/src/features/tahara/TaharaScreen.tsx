@@ -14,24 +14,24 @@ import { useDerived } from '@/state/derived';
 import { newId, useTahara } from '@/state/store';
 import { SEVEN } from './tracking';
 
-export function TaharaTabs({ active }: { active: 'tahara' | 'vestot' }) {
+export function TaharaTabs({ active }: { active: 'tahara' | 'prishah' | 'vestot' }) {
+  const tabs = [
+    ['tahara', '/tahara', 'שבעה נקיים וטבילה'],
+    ['prishah', '/tahara/prishah', 'ימי פרישה'],
+    ['vestot', '/tahara/vestot', 'ראיות ווסתות'],
+  ] as const;
   return (
     <nav
       aria-label="אזורי טהרה"
-      className="mb-5 inline-flex rounded-pill border border-line bg-surface p-1"
+      className="mb-5 flex max-w-full gap-1 overflow-x-auto rounded-pill border border-line bg-surface p-1 [scrollbar-width:none]"
     >
-      {(
-        [
-          ['tahara', '/tahara', 'הפסק, שבעה נקיים וטבילה'],
-          ['vestot', '/tahara/vestot', 'מעקב וסתות'],
-        ] as const
-      ).map(([key, href, label]) => (
+      {tabs.map(([key, href, label]) => (
         <Link
           key={key}
           href={href}
           aria-current={active === key ? 'page' : undefined}
           className={cn(
-            'inline-flex min-h-10 items-center rounded-pill px-4 text-sm',
+            'inline-flex min-h-10 shrink-0 items-center rounded-pill px-4 text-sm whitespace-nowrap',
             active === key ? 'bg-blush font-medium text-rose-strong' : 'text-ink-soft',
           )}
         >

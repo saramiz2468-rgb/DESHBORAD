@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@tahara/ui';
 import { bleedLength } from '@tahara/core/medical-engine';
 import type { ISODate } from '@tahara/core/calendar';
+import { ONAH_LABEL } from '@tahara/core/halacha-engine';
 import { BEDIKA_RESULT_LABELS, FLOW_LABELS, MUCUS_LABELS, SYMPTOM_LABELS } from '@/domain/labels';
 import { Sheet } from '@/components/app/Sheet';
 import { EstimateTag } from '@/components/app/bits';
@@ -38,6 +39,8 @@ export function DaySheet({
   const k = info.kinds;
   const nothing =
     !info.periods.length &&
+    !info.sightings.length &&
+    !info.prishot.length &&
     !info.hefseks.length &&
     !info.bedikot.length &&
     !info.tevilot.length &&
@@ -112,6 +115,26 @@ export function DaySheet({
             {BEDIKA_RESULT_LABELS[b.result]} (כפי שתיעדת)
           </Row>
         ))}
+        {info.sightings.map((x) => (
+          <Row
+            key={x.id}
+            color="var(--ev-sighting)"
+            title="תחילת ראייה"
+            onEdit={() => go(() => open({ kind: 'sighting', existing: x }))}
+          >
+            {x.time ? `בשעה ${x.time}` : 'ללא שעה'}
+          </Row>
+        ))}
+        {info.prishot.map((p) => (
+          <Row
+            key={p.hdate + p.onah}
+            color="var(--ev-veset)"
+            title={`מועד פרישה · ${ONAH_LABEL[p.onah]}`}
+            draft
+          >
+            {p.entries.map((e) => e.label).join(' · ')} · {p.window.from.time}–{p.window.to.time}
+          </Row>
+        ))}
         {info.tevilot.map(({ tevila, type }) => (
           <Row
             key={tevila.id + type}
@@ -170,6 +193,7 @@ export function DaySheet({
 }
 
 function Row({
+  draft,
   color,
   title,
   children,
@@ -181,6 +205,7 @@ function Row({
   children: ReactNode;
   onEdit?: () => void;
   estimate?: boolean;
+  draft?: boolean;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-line px-3.5 py-3">
@@ -189,6 +214,11 @@ function Row({
         <p className="flex items-center gap-2 text-sm font-medium text-ink">
           {title}
           {estimate ? <EstimateTag /> : null}
+          {draft ? (
+            <span className="rounded-pill bg-gold-soft px-2 py-0.5 text-[0.7rem] text-ink-soft">
+              טיוטה
+            </span>
+          ) : null}
         </p>
         <p className="truncate text-xs text-ink-soft">{children}</p>
       </div>

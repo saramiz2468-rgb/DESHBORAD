@@ -7,7 +7,8 @@
  * and are never sent anywhere or stored outside the tab's memory.
  */
 import { addDays, type ISODate } from '@tahara/core/calendar';
-import type { Bedika, TaharaData } from '@/domain/types';
+import { MINHAG_PRESETS } from '@tahara/core/halacha-engine';
+import type { Bedika, Sighting, TaharaData } from '@/domain/types';
 import { emptyData } from './defaults';
 
 export type ScenarioKey =
@@ -39,7 +40,36 @@ function periodsFrom(today: ISODate, lengths: number[], dayOfCycle: number, blee
   }));
 }
 
+const TIMES = ['10:30', '14:15', '09:40', '11:20', '13:05', '08:50'];
+
+/** Demo: each demo period is also recorded as a sighting, with a daytime start. */
+function withHalacha(data: TaharaData, configured = true): TaharaData {
+  const sightings: Sighting[] = data.periods.map((p, i) => ({
+    id: id('v'),
+    date: p.start,
+    time: TIMES[i % TIMES.length],
+    onahMode: 'auto',
+    kind: 'regular',
+    flags: [],
+    periodId: p.id,
+  }));
+  const periods = data.periods.map((p, i) => ({ ...p, startTime: TIMES[i % TIMES.length] }));
+  return {
+    ...data,
+    periods,
+    sightings,
+    halacha: configured
+      ? { ...data.halacha, configured: true, minhag: 'sephardi', ...MINHAG_PRESETS.sephardi.values }
+      : data.halacha,
+  };
+}
+
 export function buildScenario(key: ScenarioKey, today: ISODate): TaharaData {
+  const data = buildBase(key, today);
+  return key === 'new' ? data : withHalacha(data, key !== 'partial');
+}
+
+function buildBase(key: ScenarioKey, today: ISODate): TaharaData {
   const d = emptyData();
   switch (key) {
     case 'new':

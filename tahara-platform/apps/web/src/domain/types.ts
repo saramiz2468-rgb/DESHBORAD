@@ -5,6 +5,12 @@
  * The two domains never reference each other.
  */
 import type { DateDisplay, ISODate } from '@tahara/core/calendar';
+import type {
+  ComplexFlag,
+  HalachaSettings,
+  OnahMode,
+  SightingKind,
+} from '@tahara/core/halacha-engine';
 
 export type Flow = 'light' | 'medium' | 'heavy';
 
@@ -89,6 +95,33 @@ export interface Tevila {
   notes?: string | undefined;
 }
 
+/** A sighting (ראייה) for halachic tracking. Optionally linked to a medical period record. */
+export interface Sighting {
+  id: string;
+  date: ISODate;
+  time?: string | undefined;
+  onahMode: OnahMode;
+  kind: SightingKind;
+  flags: ComplexFlag[];
+  periodId?: string | undefined;
+  notes?: string | undefined;
+}
+
+export interface HalachaPrefs extends HalachaSettings {
+  /** False until the user chose her minhag in settings. */
+  configured: boolean;
+  cityId: string;
+  rabbiNote?: string | undefined;
+}
+
+export interface CalcHistoryEntry {
+  id: string;
+  at: string;
+  reason: string;
+  upcoming: number;
+  next?: ISODate | undefined;
+}
+
 export interface ChecklistItem {
   id: string;
   text: string;
@@ -106,7 +139,11 @@ export type ReminderKey =
   | 'fertile-window'
   | 'ovulation'
   | 'lh-test'
-  | 'vestot';
+  | 'prishah-before'
+  | 'prishah-day'
+  | 'recalc'
+  | 'pattern'
+  | 'missing-data';
 
 export interface ReminderSetting {
   enabled: boolean;
@@ -129,6 +166,8 @@ export interface TaharaData {
   hefseks: Hefsek[];
   bedikot: Bedika[];
   tevilot: Tevila[];
+  sightings: Sighting[];
+  halacha: HalachaPrefs;
   checklist: ChecklistItem[];
   reminders: Record<ReminderKey, ReminderSetting>;
   preferences: Preferences;

@@ -1,5 +1,7 @@
+import { DEFAULT_CITY_ID } from '@tahara/core/calendar';
 import type {
   ChecklistItem,
+  HalachaPrefs,
   Preferences,
   ReminderKey,
   ReminderSetting,
@@ -22,7 +24,22 @@ export const DEFAULT_REMINDERS: Record<ReminderKey, ReminderSetting> = {
   'fertile-window': { enabled: false, time: '09:00' },
   ovulation: { enabled: false, time: '09:00' },
   'lh-test': { enabled: false, time: '10:00' },
-  vestot: { enabled: false, time: '08:00' },
+  'prishah-before': { enabled: false, time: '20:00' },
+  'prishah-day': { enabled: false, time: '08:00' },
+  recalc: { enabled: true, time: '09:00' },
+  pattern: { enabled: true, time: '09:00' },
+  'missing-data': { enabled: true, time: '09:00' },
+};
+
+export const DEFAULT_HALACHA: HalachaPrefs = {
+  configured: false,
+  minhag: 'personal',
+  beinonitFullDay: false,
+  beinonitDay31: false,
+  ohrZarua: false,
+  haflagotNotUprooted: false,
+  fixedVeset: null,
+  cityId: DEFAULT_CITY_ID,
 };
 
 export function defaultChecklist(): ChecklistItem[] {
@@ -42,6 +59,8 @@ export function emptyData(): TaharaData {
     hefseks: [],
     bedikot: [],
     tevilot: [],
+    sightings: [],
+    halacha: { ...DEFAULT_HALACHA },
     checklist: defaultChecklist(),
     reminders: { ...DEFAULT_REMINDERS },
     preferences: { ...DEFAULT_PREFERENCES },

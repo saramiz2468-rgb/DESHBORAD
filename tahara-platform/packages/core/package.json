@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     "./calendar": "./src/calendar/index.ts",
-    "./medical-engine": "./src/medical-engine/index.ts"
+    "./medical-engine": "./src/medical-engine/index.ts",
+    "./halacha-engine": "./src/halacha-engine/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

@@ -2,7 +2,14 @@
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { ISODate } from '@tahara/core/calendar';
-import type { BedikaPart, FertilityLog, Hefsek, Period, SymptomLog } from '@/domain/types';
+import type {
+  BedikaPart,
+  FertilityLog,
+  Hefsek,
+  Period,
+  Sighting,
+  SymptomLog,
+} from '@/domain/types';
 import { Sheet } from '@/components/app/Sheet';
 import { useDerived } from '@/state/derived';
 import { useTahara } from '@/state/store';
@@ -10,6 +17,7 @@ import { BedikaForm } from './BedikaForm';
 import { FertilityForm } from './FertilityForm';
 import { HefsekForm } from './HefsekForm';
 import { PeriodForm } from './PeriodForm';
+import { SightingForm } from './SightingForm';
 import { SymptomForm } from './SymptomForm';
 import { TevilaForm } from './TevilaForm';
 
@@ -19,7 +27,8 @@ export type SheetRequest =
   | { kind: 'fertility'; existing?: FertilityLog; date?: ISODate; focus?: 'lh' }
   | { kind: 'hefsek'; existing?: Hefsek; date?: ISODate }
   | { kind: 'bedika'; day?: number; part?: BedikaPart }
-  | { kind: 'tevila' };
+  | { kind: 'tevila' }
+  | { kind: 'sighting'; existing?: Sighting; date?: ISODate };
 
 const Ctx = createContext<{ open: (r: SheetRequest) => void } | null>(null);
 
@@ -30,6 +39,7 @@ const TITLES: Record<SheetRequest['kind'], string> = {
   hefsek: 'הפסק טהרה',
   bedika: 'תיעוד בדיקה',
   tevila: 'טבילה',
+  sighting: 'תיעוד ראייה',
 };
 
 /** One place that renders the active form sheet, so any screen can open any form. */
@@ -86,6 +96,9 @@ export function ActionSheetsProvider({ children }: { children: ReactNode }) {
             part={req.part}
             onDone={close}
           />
+        ) : null}
+        {req?.kind === 'sighting' ? (
+          <SightingForm key={key} existing={req.existing} date={req.date} onDone={close} />
         ) : null}
         {req?.kind === 'tevila' && tahara.hefsek ? (
           <TevilaForm key={key} hefsek={tahara.hefsek} onDone={close} />
