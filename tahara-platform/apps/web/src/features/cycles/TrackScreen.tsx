@@ -53,7 +53,7 @@ export function TrackScreen() {
             onClick={() => setTab(key)}
             className={cn(
               'min-h-10 rounded-pill px-4 text-sm transition-colors',
-              tab === key ? 'bg-blush font-medium text-rose-strong' : 'text-ink-soft',
+              tab === key ? 'bg-ink font-semibold text-surface' : 'text-ink-soft',
             )}
           >
             {label}
@@ -90,11 +90,13 @@ export function TrackScreen() {
                     <dl className="mt-4 grid grid-cols-3 gap-3 text-center">
                       <div className="rounded-xl bg-surface-muted px-2 py-2.5">
                         <dt className="text-[0.7rem] text-ink-soft">ימי דימום</dt>
-                        <dd className="mt-0.5 font-display text-xl text-ink">{bleed ?? '—'}</dd>
+                        <dd className="mt-0.5 font-display font-black tracking-tight text-xl text-ink">
+                          {bleed ?? '—'}
+                        </dd>
                       </div>
                       <div className="rounded-xl bg-surface-muted px-2 py-2.5">
                         <dt className="text-[0.7rem] text-ink-soft">אורך מחזור</dt>
-                        <dd className="mt-0.5 font-display text-xl text-ink">
+                        <dd className="mt-0.5 font-display font-black tracking-tight text-xl text-ink">
                           {c ? c.length : '—'}
                         </dd>
                       </div>

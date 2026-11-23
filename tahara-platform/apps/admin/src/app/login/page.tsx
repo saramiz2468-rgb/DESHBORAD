@@ -13,7 +13,7 @@ export default function AdminLogin() {
       </div>
       <Card className="p-6 sm:p-8">
         <div className="mb-1 flex items-center justify-between gap-2">
-          <h1 className="font-display text-2xl font-medium text-plum">כניסת מנהלת</h1>
+          <h1 className="font-display font-black tracking-tight text-2xl text-plum">כניסת מנהלת</h1>
           <StatusBadge status="locked" />
         </div>
         <p className="mb-6 text-sm leading-relaxed text-ink-soft">

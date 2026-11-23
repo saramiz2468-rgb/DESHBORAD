@@ -1,5 +1,4 @@
 import '@fontsource-variable/heebo';
-import '@fontsource-variable/frank-ruhl-libre';
 import './globals.css';
 
 import type { Metadata, Viewport } from 'next';
@@ -33,8 +32,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fbf7f3' },
-    { media: '(prefers-color-scheme: dark)', color: '#1c1519' },
+    { media: '(prefers-color-scheme: light)', color: '#f7f5f6' },
+    { media: '(prefers-color-scheme: dark)', color: '#0b0a0c' },
   ],
 };
 

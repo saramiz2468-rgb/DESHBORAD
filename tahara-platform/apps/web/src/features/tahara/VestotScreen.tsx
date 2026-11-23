@@ -107,7 +107,7 @@ export function VestotScreen() {
                     {formatDate(iv.from.hdate, 'hebrew', { year: false })} ←{' '}
                     {formatDate(iv.to.hdate, 'hebrew', { year: false })}
                   </span>
-                  <span className="font-display text-lg text-ink">
+                  <span className="font-display font-black tracking-tight text-lg text-ink">
                     {iv.days} <span className="font-sans text-xs text-ink-soft">ימים</span>
                   </span>
                 </li>

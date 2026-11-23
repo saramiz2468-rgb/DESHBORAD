@@ -34,7 +34,10 @@ export default async function ModulePage({ params }: PageProps<'/[module]'>) {
           {m.fields.map((f) => (
             <Card key={f} className="p-4 sm:p-5">
               <p className="text-xs leading-snug text-ink-soft">{f}</p>
-              <p className="mt-3 font-display text-3xl text-ink-faint" aria-label="אין נתונים">
+              <p
+                className="mt-3 font-display font-black tracking-tight text-3xl text-ink-faint"
+                aria-label="אין נתונים"
+              >
                 —
               </p>
               <p className="mt-1 text-[0.7rem] text-ink-faint">לא חובר מקור נתונים</p>

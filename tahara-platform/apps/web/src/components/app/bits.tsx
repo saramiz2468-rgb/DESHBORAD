@@ -100,7 +100,7 @@ export function EmptyState({
           {icon}
         </div>
       ) : null}
-      <h3 className="font-display text-lg font-medium text-plum">{title}</h3>
+      <h3 className="font-display font-black tracking-tight text-lg text-plum">{title}</h3>
       <p className="mt-1.5 max-w-xs text-sm leading-relaxed text-ink-soft">{text}</p>
       {action ? <div className="mt-5">{action}</div> : null}
     </Card>
@@ -124,7 +124,7 @@ export function Stat({
         {label}
         {estimate ? <EstimateTag /> : null}
       </p>
-      <p className="mt-1 font-display text-2xl leading-tight text-ink">
+      <p className="mt-1 font-display font-black tracking-tight text-2xl leading-tight text-ink">
         {value ?? '—'}
         {unit && value !== null && value !== undefined ? (
           <span className="ms-1 font-sans text-sm text-ink-soft">{unit}</span>

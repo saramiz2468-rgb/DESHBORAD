@@ -26,7 +26,7 @@ export function AdminNav({ orientation }: { orientation: 'vertical' | 'horizonta
                 className={cn(
                   'flex min-h-10 items-center rounded-xl px-3 text-sm whitespace-nowrap transition-colors',
                   active
-                    ? 'bg-blush font-medium text-rose-strong'
+                    ? 'bg-ink font-semibold text-surface'
                     : 'text-ink-soft hover:bg-surface-muted hover:text-ink',
                 )}
               >

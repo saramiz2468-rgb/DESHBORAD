@@ -83,7 +83,7 @@ export function TaharaCard() {
             </div>
             <div>
               <p className="text-xs text-ink-soft">ימים שתיעדת</p>
-              <p className="mt-1 font-display text-2xl text-ink">
+              <p className="mt-1 font-display font-black tracking-tight text-2xl text-ink">
                 {t.documentedDays}
                 <span className="ms-1 font-sans text-sm text-ink-soft">מתוך {SEVEN}</span>
               </p>

@@ -1,26 +1,27 @@
 /*
- * TAHARA design tokens (Tailwind v4).
- * Palette: warm ivory, antique rose, deep plum ink and a restrained champagne gold.
- * All text/background pairs below meet WCAG AA (4.5:1) in both themes.
+ * TAHARA design tokens (Tailwind v4). Same visual language as the phone app:
+ * hot pink, black and white, heavy Heebo headings, black active states.
  */
+/* Palette (matches the phone app design): white ground, near-black ink, hot pink accent.
+ * Light: pink #e11d63 on white 4.6:1, ink 17:1. Dark: same identity on black. */
 :root {
-  --tk-canvas: #fbf7f3;
+  --tk-canvas: #f7f5f6;
   --tk-surface: #ffffff;
-  --tk-surface-muted: #f6eeea;
-  --tk-blush: #f2e1de;
-  --tk-ink: #33232e;
-  --tk-ink-soft: #6b5462;
-  --tk-ink-faint: #8a7381;
-  --tk-line: #eadbd6;
-  --tk-rose: #9b4f60;
-  --tk-rose-strong: #7f3c4c;
-  --tk-rose-soft: #c98a96;
-  --tk-gold: #a88347;
-  --tk-gold-soft: #e9dcc3;
-  --tk-plum: #4a2f43;
+  --tk-surface-muted: #f3eff1;
+  --tk-blush: #fdeaf1;
+  --tk-ink: #141216;
+  --tk-ink-soft: #5f5761;
+  --tk-ink-faint: #857d88;
+  --tk-line: #e9e4e7;
+  --tk-rose: #e11d63;
+  --tk-rose-strong: #b8164f;
+  --tk-rose-soft: #f48fb4;
+  --tk-gold: #e11d63;
+  --tk-gold-soft: #fbe3ec;
+  --tk-plum: #141216;
   --tk-on-rose: #ffffff;
-  --tk-focus: #9b4f60;
-  --tk-shadow: 51 35 46;
+  --tk-focus: #e11d63;
+  --tk-shadow: 20 18 22;
   /* Calendar event colors – validated (dataviz validate_palette.js, light, all checks pass). */
   --ev-bleed: #c4506b;
   --ev-hefsek: #8a72c8;
@@ -30,29 +31,29 @@
   --ev-ovulation: #6b3fa8;
   --ev-veset: #a5552e;
   --ev-kavua: #a5552e;
-  --ev-sighting: #7f3c4c;
+  --ev-sighting: #b8164f;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --tk-canvas: #1c1519;
-    --tk-surface: #261c22;
-    --tk-surface-muted: #2f242a;
-    --tk-blush: #3a2a31;
-    --tk-ink: #f5ebef;
-    --tk-ink-soft: #cdb8c2;
-    --tk-ink-faint: #a8919c;
-    --tk-line: #3d2f36;
-    --tk-rose: #e3a1ad;
-    --tk-rose-strong: #f0bac4;
-    --tk-rose-soft: #8e5563;
-    --tk-gold: #d8b77c;
-    --tk-gold-soft: #4a3d2a;
-    --tk-plum: #f0dde6;
-    --tk-on-rose: #2a1820;
-    --tk-focus: #e3a1ad;
+    --tk-canvas: #0b0a0c;
+    --tk-surface: #151317;
+    --tk-surface-muted: #1d1a1f;
+    --tk-blush: #33121f;
+    --tk-ink: #ffffff;
+    --tk-ink-soft: #c9c1c7;
+    --tk-ink-faint: #9a9198;
+    --tk-line: #2a262c;
+    --tk-rose: #ff4f8b;
+    --tk-rose-strong: #ff8fb3;
+    --tk-rose-soft: #8a2a4c;
+    --tk-gold: #ff4f8b;
+    --tk-gold-soft: #33121f;
+    --tk-plum: #ffffff;
+    --tk-on-rose: #ffffff;
+    --tk-focus: #ff4f8b;
     --tk-shadow: 0 0 0;
-    /* Dark: own steps, validated against #261c22. Ovulation/fertile ΔE 6.3 (deutan) → shape-encoded. */
+    /* Dark: own steps, validated against a dark surface. Ovulation/fertile ΔE 6.3 (deutan) → shape-encoded. */
     --ev-bleed: #d4627c;
     --ev-hefsek: #8f7ad6;
     --ev-clean: #3fa97a;
@@ -61,7 +62,7 @@
     --ev-ovulation: #a85cb0;
     --ev-veset: #b86a3e;
     --ev-kavua: #b86a3e;
-    --ev-sighting: #f0bac4;
+    --ev-sighting: #ff8fb3;
   }
 }
 
@@ -83,9 +84,10 @@
   --color-on-rose: var(--tk-on-rose);
 
   --font-sans: 'Heebo Variable', 'Heebo', system-ui, 'Segoe UI', Arial, sans-serif;
-  --font-display: 'Frank Ruhl Libre Variable', 'Frank Ruhl Libre', 'David', Georgia, serif;
+  --font-display: 'Heebo Variable', 'Heebo', system-ui, 'Segoe UI', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
 
-  --radius-card: 1.25rem;
+  --radius-card: 1.375rem;
   --radius-pill: 999px;
 
   --shadow-soft:
@@ -154,5 +156,13 @@
   to {
     transform: none;
     opacity: 1;
+  }
+}
+@keyframes tick {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(50%);
   }
 }

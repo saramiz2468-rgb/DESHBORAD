@@ -31,7 +31,7 @@ export function DraftNotice({ className }: { className?: string | undefined }) {
 function windowText(p: Prishah) {
   const f = p.window.from;
   const t = p.window.to;
-  if (f.date === t.date) return `${f.time}–${t.time}`;
+  if (f.date === t.date) return `מהזריחה ${f.time} עד השקיעה ${t.time}`;
   return `מ-${f.time} ביום ${WEEKDAYS[new Date(f.date + 'T12:00:00Z').getUTCDay()]} עד ${t.time} ביום ${WEEKDAYS[new Date(t.date + 'T12:00:00Z').getUTCDay()]}`;
 }
 
@@ -165,7 +165,7 @@ export function PrishahScreen() {
                 <Card className="p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-display text-xl text-plum">
+                      <p className="font-display font-black tracking-tight text-xl text-plum">
                         {formatHebrew(p.hdate, { year: false })}
                       </p>
                       <p className="text-sm text-ink-soft">

@@ -32,7 +32,7 @@ export function TaharaTabs({ active }: { active: 'tahara' | 'prishah' | 'vestot'
           aria-current={active === key ? 'page' : undefined}
           className={cn(
             'inline-flex min-h-10 shrink-0 items-center rounded-pill px-4 text-sm whitespace-nowrap',
-            active === key ? 'bg-blush font-medium text-rose-strong' : 'text-ink-soft',
+            active === key ? 'bg-ink font-semibold text-surface' : 'text-ink-soft',
           )}
         >
           {label}
@@ -159,7 +159,7 @@ function SevenDays() {
                 <div className="flex items-center gap-3">
                   <span
                     className={cn(
-                      'grid size-10 shrink-0 place-items-center rounded-full font-display text-lg',
+                      'grid size-10 shrink-0 place-items-center rounded-full font-display font-black tracking-tight text-lg',
                       documented ? 'bg-gold text-surface' : 'bg-gold-soft/50 text-ink-soft',
                     )}
                   >

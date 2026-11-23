@@ -30,7 +30,7 @@ export function SideNav() {
             className={cn(
               'flex min-h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-colors',
               isActive(item.href)
-                ? 'bg-blush font-medium text-rose-strong'
+                ? 'bg-ink font-semibold text-surface'
                 : 'text-ink-soft hover:bg-surface-muted hover:text-ink',
             )}
           >
@@ -60,13 +60,13 @@ export function BottomNav() {
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex min-h-16 flex-col items-center justify-center gap-1 text-[0.72rem]',
-                  active ? 'font-medium text-rose-strong' : 'text-ink-faint',
+                  active ? 'font-bold text-ink' : 'text-ink-faint',
                 )}
               >
                 <span
                   className={cn(
                     'grid h-7 w-12 place-items-center rounded-pill transition-colors',
-                    active && 'bg-blush',
+                    active && 'bg-ink text-surface',
                   )}
                 >
                   <Icon name={item.icon} />

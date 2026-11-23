@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Logo } from '@tahara/ui';
 import { BottomNav, SideNav } from '@/components/AppNav';
 import { SimulationBar } from '@/components/SimulationBar';
+import { Ticker } from '@/components/Ticker';
 import { HalachaWatcher } from '@/components/app/HalachaWatcher';
 import { Toaster } from '@/components/app/Toaster';
 import { ActionSheetsProvider } from '@/features/forms/ActionSheets';
@@ -30,6 +31,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </aside>
             <div className="min-w-0 flex-1">
               <SimulationBar />
+              <Ticker />
               <header className="flex h-14 items-center justify-between border-b border-line px-4 lg:hidden">
                 <Link href="/today" aria-label="TAHARA – בית">
                   <Logo subtitle={false} />

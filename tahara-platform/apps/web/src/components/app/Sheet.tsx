@@ -59,7 +59,7 @@ export function Sheet({
                 aria-hidden
                 className="mx-auto mb-3 block h-1 w-10 rounded-full bg-line sm:hidden"
               />
-              <h2 id={titleId} className="font-display text-xl font-medium text-plum">
+              <h2 id={titleId} className="font-display font-black tracking-tight text-xl text-plum">
                 {title}
               </h2>
               {description ? <p className="mt-1 text-sm text-ink-soft">{description}</p> : null}

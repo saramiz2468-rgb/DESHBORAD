@@ -132,7 +132,8 @@ export function DaySheet({
             title={`מועד פרישה · ${ONAH_LABEL[p.onah]}`}
             draft
           >
-            {p.entries.map((e) => e.label).join(' · ')} · {p.window.from.time}–{p.window.to.time}
+            {p.entries.map((e) => e.label).join(' · ')} · מ-{p.window.from.time} עד{' '}
+            {p.window.to.time}
           </Row>
         ))}
         {info.tevilot.map(({ tevila, type }) => (

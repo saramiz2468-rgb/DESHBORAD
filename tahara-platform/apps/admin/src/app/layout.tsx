@@ -1,5 +1,4 @@
 import '@fontsource-variable/heebo';
-import '@fontsource-variable/frank-ruhl-libre';
 import './globals.css';
 
 import type { Metadata, Viewport } from 'next';
@@ -11,7 +10,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 };
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#fbf7f3' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#f7f5f6' };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   await connection();

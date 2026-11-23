@@ -78,7 +78,10 @@ export function CalendarScreen() {
             <Icon name="chevronNext" />
           </button>
           <div className="min-w-0 text-center">
-            <h2 className="font-display text-xl text-plum" aria-live="polite">
+            <h2
+              className="font-display font-black tracking-tight text-xl text-plum"
+              aria-live="polite"
+            >
               {title}
             </h2>
             {display === 'both' ? (

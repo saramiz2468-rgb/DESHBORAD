@@ -38,7 +38,7 @@ export default function HomePage() {
         />
         <div className="relative mx-auto max-w-3xl px-4 pt-14 pb-16 text-center sm:px-6 sm:pt-24 sm:pb-24">
           <StatusBadge status="in-development" className="mb-6" />
-          <h1 className="font-display text-[2.4rem] leading-[1.15] font-medium text-plum sm:text-6xl">
+          <h1 className="font-display font-black tracking-tight text-[2.4rem] leading-[1.15] text-plum sm:text-6xl">
             היומן האישי שלך,
             <br />
             <span className="text-rose">בשקט ובדיוק.</span>
@@ -64,7 +64,7 @@ export default function HomePage() {
       <section id="principles" className="mx-auto max-w-6xl scroll-mt-20 px-4 sm:px-6">
         <div className="mb-8 text-center">
           <p className="text-xs font-medium tracking-wide text-gold">העקרונות שעליהם המוצר נבנה</p>
-          <h2 className="mt-2 font-display text-3xl font-medium text-plum sm:text-4xl">
+          <h2 className="mt-2 font-display font-black tracking-tight text-3xl text-plum sm:text-4xl">
             נבנה בזהירות, מהיסוד
           </h2>
         </div>

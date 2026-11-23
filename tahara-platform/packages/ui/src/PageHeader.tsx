@@ -14,10 +14,8 @@ export function PageHeader({
   return (
     <header className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        {eyebrow ? (
-          <p className="mb-1.5 text-xs font-medium tracking-wide text-gold">{eyebrow}</p>
-        ) : null}
-        <h1 className="font-display text-[1.9rem] leading-tight font-medium text-plum sm:text-4xl">
+        {eyebrow ? <p className="mb-1.5 text-xs font-extrabold text-rose">{eyebrow}</p> : null}
+        <h1 className="font-display font-black tracking-tight text-[1.9rem] leading-tight text-plum sm:text-4xl">
           {title}
         </h1>
         {description ? (

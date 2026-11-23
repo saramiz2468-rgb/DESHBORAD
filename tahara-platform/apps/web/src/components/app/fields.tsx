@@ -129,7 +129,7 @@ export function Segmented<T extends string>({
               className={cn(
                 'min-h-11 rounded-pill border px-4 text-sm transition-colors',
                 on
-                  ? 'border-rose bg-rose text-on-rose'
+                  ? 'border-ink bg-ink font-bold text-surface'
                   : 'border-line bg-surface text-ink-soft hover:border-rose-soft',
               )}
             >

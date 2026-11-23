@@ -24,7 +24,9 @@ export function HomeScreen() {
   return (
     <div className="space-y-5">
       <header className="mb-2">
-        <h1 className="font-display text-[2rem] leading-tight font-medium text-plum">שלום לך 🌸</h1>
+        <h1 className="font-display font-black tracking-tight text-[2rem] leading-tight text-plum">
+          שלום לך 🌸
+        </h1>
         <p className="mt-1 text-[0.95rem] text-ink-soft">{fmt(today, { weekday: true })}</p>
       </header>
 
@@ -117,7 +119,7 @@ function Welcome() {
         className="absolute -top-10 -start-10 size-40 rounded-full bg-blush blur-2xl"
       />
       <div className="relative">
-        <h2 className="font-display text-2xl font-medium text-plum">ברוכה הבאה</h2>
+        <h2 className="font-display font-black tracking-tight text-2xl text-plum">ברוכה הבאה</h2>
         <p className="mt-2 max-w-md text-[0.95rem] leading-relaxed text-ink-soft">
           כאן תופיע תמונת המצב האישית שלך. כדי להתחיל, אפשר לתעד את המחזור האחרון או להגדיר את אורך
           המחזור הרגיל שלך.
@@ -171,7 +173,9 @@ function CycleCard() {
         >
           <div>
             <p className="text-xs text-ink-soft">יום</p>
-            <p className="font-display text-4xl leading-none text-plum">{p.dayOfCycle}</p>
+            <p className="font-display font-black tracking-tight text-4xl leading-none text-plum">
+              {p.dayOfCycle}
+            </p>
             <p className="mt-1 text-xs text-ink-faint">
               {p.cycleLength ? `מתוך ~${p.cycleLength}` : 'במחזור'}
             </p>

@@ -21,7 +21,7 @@ const page = await browser.newPage();
 for (const t of targets) {
   const inner = Math.round(t.size * (1 - t.pad * 2));
   const body = t.square
-    ? `<div style="width:${t.size}px;height:${t.size}px;background:#fbf3ef;display:grid;place-items:center">${svg.replace('<svg ', `<svg width="${inner}" height="${inner}" `).replace('rx="112"', 'rx="0"')}</div>`
+    ? `<div style="width:${t.size}px;height:${t.size}px;background:#ffffff;display:grid;place-items:center">${svg.replace('<svg ', `<svg width="${inner}" height="${inner}" `).replace('rx="112"', 'rx="0"')}</div>`
     : svg.replace('<svg ', `<svg width="${t.size}" height="${t.size}" `);
   await page.setViewportSize({ width: t.size, height: t.size });
   await page.setContent(
